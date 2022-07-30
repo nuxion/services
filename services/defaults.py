@@ -1,2 +1,3 @@
-SANIC_APP = "playpy"
-MIGRATIONS_PKG = "services"
+SANIC_APP = "srv"
+BASE_PATH_ENV = "SRV_BASE_PATH"
+LOGGER = "srv"

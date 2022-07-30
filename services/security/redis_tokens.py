@@ -9,7 +9,7 @@ from .utils import generate_token
 
 
 class RedisTokenStore(TokenStoreSpec):
-    def __init__(self, redis: Union[Redis, str], namespace: str = "rtkn"):
+    def __init__(self, redis: Union[Redis, str], namespace: str = "rtk"):
         if isinstance(redis, str):
             _redis = create_pool(redis, decode_responses=True)
         else:

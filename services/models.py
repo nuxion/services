@@ -10,7 +10,6 @@ from sqlalchemy.orm import declarative_mixin, declared_attr, relationship
 from sqlalchemy.schema import Table
 from sqlalchemy.sql import functions
 from sqlalchemy.types import BINARY, JSON
-from sqlalchemy_serializer import SerializerMixin
 
 
 @declarative_mixin

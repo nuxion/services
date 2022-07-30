@@ -1,21 +1,22 @@
 from sanic import Blueprint, Request
 from sanic.response import json
 from sanic_ext import openapi
-from services.security import get_auth, get_user_mg, protected
+from services.security import get_auth, protected
+from .web import get_users_mg
 
 from .errors import AuthValidationFailed, WebAuthFailed
 from .types import JWTResponse, UserLogin
 
-auth_bp = Blueprint("auth_api", url_prefix="auth", version="v1")
+users_bp = Blueprint("users_api", url_prefix="users", version="v1")
 
 
-@auth_bp.post("/login")
+@users_bp.post("/login")
 @openapi.response(200, {"application/json": JWTResponse})
 @openapi.response(403, dict(msg=str), "Not Found")
 @openapi.body(UserLogin)
 async def login_handler(request: Request):
     auth = get_auth(request)
-    manager = get_user_mg(request)
+    manager = get_users_mg(request)
     session = request.ctx.session
     try:
         creds = UserLogin(request.json)
@@ -29,14 +30,14 @@ async def login_handler(request: Request):
     return json(JWTResponse(access_token=encoded, refresh_token=rtkn).dict(), 200)
 
 
-@auth_bp.get("/verify")
+@users_bp.get("/verify")
 @openapi.response(200, {"application/json": JWTResponse})
 @protected()
 async def verify_handler(request: Request):
     return json(request.ctx.token_data, 200)
 
 
-@auth_bp.post("/refresh_token")
+@users_bp.post("/refresh_token")
 @openapi.response(200, {"application/json": JWTResponse})
 @openapi.body(JWTResponse)
 async def refresh_handler(request):
@@ -57,5 +58,4 @@ async def refresh_handler(request):
         )
         return json(jwt_res.dict(), 200)
     except AuthValidationFailed as e:
-        print(e)
         raise WebAuthFailed()

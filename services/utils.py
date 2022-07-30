@@ -159,3 +159,22 @@ def get_class(fullclass_path):
     mod = import_module(module)
     cls = getattr(mod, class_)
     return cls
+
+
+def init_blueprints(app, blueprints_allowed, package_dir="services.web"):
+    """
+    It will import bluprints from modules that ends with "_bp" and belongs
+    to the package declared in `package_dir`
+    """
+    blueprints = set()
+    mod = app.__module__
+    for mod_name in blueprints_allowed:
+        modules = import_module(f"{package_dir}.{mod_name}", mod)
+        for el in dir(modules):
+            if el.endswith("_bp"):
+                bp = getattr(modules, el)
+                blueprints.add(bp)
+
+    for bp in blueprints:
+        print("Adding blueprint: ", bp.name)
+        app.blueprint(bp)

@@ -1,6 +1,8 @@
 from abc import ABC, abstractmethod
 from typing import Any, Dict, List, Optional, Union
 
+from sanic import Request
+
 from .types import JWTResponse
 
 
@@ -16,10 +18,6 @@ class TokenStoreSpec(ABC):
     @abstractmethod
     async def delete(self, key: str):
         pass
-
-    # @abstractmethod
-    # async def validate(self, token: str, user: str) -> bool:
-    #     pass
 
     @staticmethod
     @abstractmethod
@@ -56,3 +54,4 @@ class AuthSpec(ABC):
     @abstractmethod
     async def store_refresh_token(self, username: str) -> str:
         pass
+

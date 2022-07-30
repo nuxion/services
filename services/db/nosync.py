@@ -80,4 +80,4 @@ class AsyncSQL:
             await conn.run_sync(Base.metadata.drop_all)
 
     def add_event(self, func: Callable, type_event="connect"):
-        event.listen(self.engine_sync, type_event, func)
+        event.listen(self.sync_engine, type_event, func)

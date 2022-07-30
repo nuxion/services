@@ -40,21 +40,21 @@ class UserMixin:
         raise NotImplementedError()
 
 
-class UserModel(UserMixin, Base):
-    __tablename__ = "srv_user"
-    __mapper_args__ = {"eager_defaults": True}
-
-    email = Column(String(), index=True, nullable=True, unique=True)
-
-    def to_dict(self) -> Dict[str, Any]:
-        return {
-            "id": self.id,
-            "username": self.username,
-            "password": self.password,
-            "email": self.email,
-            "is_superuser": self.is_superuser,
-            "is_active": self.is_active,
-            "scopes": self.scopes,
-            "created_at": self.created_at,
-            "updated_at": self.updated_at
-        }
+# class UserModel(UserMixin, Base):
+#     __tablename__ = "srv_user"
+#     __mapper_args__ = {"eager_defaults": True}
+# 
+#     email = Column(String(), index=True, nullable=True, unique=True)
+# 
+#     def to_dict(self) -> Dict[str, Any]:
+#         return {
+#             "id": self.id,
+#             "username": self.username,
+#             "password": self.password,
+#             "email": self.email,
+#             "is_superuser": self.is_superuser,
+#             "is_active": self.is_active,
+#             "scopes": self.scopes,
+#             "created_at": self.created_at,
+#             "updated_at": self.updated_at
+#         }

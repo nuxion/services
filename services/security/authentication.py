@@ -4,15 +4,14 @@ from copy import deepcopy
 from typing import Any, Callable, Dict, List, Optional, Set
 
 import jwt
-from labfunctions.utils import get_class
-from pydantic.error_wrappers import ValidationError
-from services import defaults
-from services.security import scopes
-from services.security.types import JWTConfig, JWTResponse, SecuritySettings
+from services.errors import BadConfigurationException
+from services.security import AuthSpec, TokenStoreSpec, open_keys, scopes
+from services.security.types import JWTConfig, JWTResponse
+from services.types import SecuritySettings
+from services.utils import get_class
 
-from .base import AuthSpec, TokenStoreSpec
 from .errors import AuthValidationFailed
-from .utils import get_delta, open_keys
+from .utils import get_delta
 
 
 class Auth(AuthSpec):
@@ -146,16 +145,17 @@ class Auth(AuthSpec):
         return is_valid
 
     async def refresh_token(self, access_token, refresh_token) -> JWTResponse:
-        is_valid = await self.validate_refresh_token(access_token, refresh_token)
-        if is_valid:
-            decoded = self.decode(access_token, verify_exp=False)
-            await self.store.delete(f"{decoded['usr']}.{refresh_token}")
+        if self.store:
+            is_valid = await self.validate_refresh_token(access_token, refresh_token)
+            if is_valid:
+                decoded = self.decode(access_token, verify_exp=False)
+                await self.store.delete(f"{decoded['usr']}.{refresh_token}")
 
-            _new_refresh = await self.store_refresh_token(decoded["usr"])
-            _new_tkn = self.encode(decoded)
-            new_jwt = JWTResponse(access_token=_new_tkn,
-                                  refresh_token=_new_refresh)
-            return new_jwt
+                _new_refresh = await self.store_refresh_token(decoded["usr"])
+                _new_tkn = self.encode(decoded)
+                new_jwt = JWTResponse(access_token=_new_tkn,
+                                      refresh_token=_new_refresh)
+                return new_jwt
         raise AuthValidationFailed()
 
 
@@ -164,14 +164,23 @@ def auth_from_settings(
 ) -> AuthSpec:
     """Intiliazie a `Auth` based on settings."""
     AuthClass = get_class(settings.AUTH_CLASS)
-    keys = open_keys(settings.JWT_PUBLIC, settings.JWT_PRIVATE)
+    keys = None
+    secret = None
+    if settings.JWT_PUBLIC and settings.JWT_PRIVATE:
+        keys = open_keys(settings.JWT_PUBLIC, settings.JWT_PRIVATE)
+    elif settings.JWT_SECRET:
+        secret = settings.JWT_SECRET
+    else:
+        raise BadConfigurationException("JWT_PUBLIC or JWT_SECRET")
+
     conf = JWTConfig(
         alg=settings.JWT_ALG,
         exp_min=settings.JWT_EXP,
         keys=keys,
+        secret=secret,
         issuer=settings.JWT_ISS,
         audience=settings.JWT_AUD,
-        requires_claims=settings.JWT_REQUIRES_CLAIMS,
+        requires_claims=settings.JWT_CLAIMS_REQUIRED,
         ttl_refresh_token=settings.REFRESH_TOKEN_TTL,
     )
     return AuthClass(conf, store=store)

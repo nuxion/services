@@ -482,3 +482,4 @@ project_test/*
 flycheck_*.py
 db.sqlite
 .ssh/
+test_app/

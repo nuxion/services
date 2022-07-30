@@ -1,22 +1,13 @@
 from datetime import datetime
-from functools import wraps
-from inspect import isawaitable
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic.error_wrappers import ValidationError
-from sanic import Request
-from services.security import AuthSpec, PasswordScript, get_delta
+from services.security import PasswordScript
+from services.security.errors import AuthValidationFailed, InvalidUser
 from services.utils import get_class
-from sqlalchemy import delete
-from sqlalchemy import insert as sqlinsert
-from sqlalchemy import select, update
+from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
-from sqlalchemy.orm import selectinload
 
-from .errors import (AuthValidationFailed, InvalidUser,
-                     MissingAuthorizationHeader, WebAuthFailed)
-from .models import UserMixin, UserModel
-from .types import JWTResponse, UserLogin, UserOrm
+from .models import UserMixin
 
 
 class UserManager:
@@ -27,7 +18,7 @@ class UserManager:
 
     @staticmethod
     def _verify_password(
-        original_password: str, *, to_verify: str, salt: Union[bytes, str]
+        original_password: bytes, *, to_verify: str, salt: Union[bytes, str]
     ) -> bool:
         pm = PasswordScript(salt)
         verified = pm.verify(to_verify, original_password)
@@ -44,19 +35,19 @@ class UserManager:
 
     async def authenticate(self, session, *,
                            username: str,
-                           password: str) -> Dict[str, Any]:
+                           password: str) -> UserMixin:
 
         user = await self.get(session, username)
         if user is None:
             raise AuthValidationFailed()
 
         is_valid = self._verify_password(
-            user.password, to_verify=password, salt=self._salt
+            user._password, to_verify=password, salt=self._salt
         )
         if not is_valid or not user.is_active:
             raise AuthValidationFailed()
 
-        return user.to_dict()
+        return user
 
     async def list(self, session, filter_active=True) -> List[UserMixin]:
         stmt = select(self._model)
@@ -107,49 +98,3 @@ class UserManager:
         u.password = pass_
         u.updated_at = datetime.utcnow()
         session.add(u)
-
-
-# async def authenticate(request: Request, *args, **kwargs) -> UserOrm:
-#     try:
-#         creds = UserLogin(**request.json)
-#     except ValidationError as e:
-#         raise AuthValidationFailed()
-#
-#     session = request.ctx.session
-#     async with session.begin():
-#         user = await get_user_async(session, creds.username)
-#         if user is None:
-#             raise AuthValidationFailed()
-#
-#         is_valid = verify_password(
-#             user, creds.password, salt=request.app.config.AUTH_SALT
-#         )
-#         if not is_valid:
-#             raise AuthValidationFailed()
-#
-#         return UserOrm.from_orm(user)
-#
-#
-# def inject_user(func):
-#     """Inject a user"""
-#
-#     def decorator(f):
-#         @wraps(f)
-#         async def decorated_function(request, *args, **kwargs):
-#             token = request.ctx.token_data
-#             session = request.ctx.session
-#             user = get_user_async(session, token["usr"])
-#             if isawaitable(user):
-#                 user = await user
-#             if not user:
-#                 raise WebAuthFailed("Authentication failed")
-#             user_orm = model2orm(user)
-#             response = f(request, user=user_orm, *args, **kwargs)
-#             if isawaitable(response):
-#                 response = await response
-#
-#             return response
-#
-#         return decorated_function
-#
-#     return decorator(func)

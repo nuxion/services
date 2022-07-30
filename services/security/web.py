@@ -1,15 +1,16 @@
 from functools import wraps
 from inspect import isawaitable
-from typing import Callable, List, Optional
+from typing import List, Optional
 
-from sanic import Request, Sanic, json, text
-from services import defaults
-from services.utils import get_class
+from sanic import Request, Sanic, json
+from services.base import WebAppSpec
+from services.security.authentication import auth_from_settings
+from services.security.redis_tokens import RedisTokenStore
+from services.types import Settings
 
 from .base import AuthSpec
 from .errors import (AuthValidationFailed, MissingAuthorizationHeader,
                      WebAuthFailed)
-from .types import JWTConfig, JWTResponse, SecuritySettings, UserLogin
 
 
 def get_auth(request: Request) -> AuthSpec:
@@ -18,13 +19,6 @@ def get_auth(request: Request) -> AuthSpec:
     current_app: Sanic = Sanic.get_app(request.app.name)
 
     return current_app.ctx.auth
-
-
-def get_authenticate(request: Request) -> Callable:
-    """a shortcut to get the Auth object from a web context"""
-    current_app: Sanic = Sanic.get_app(request.app.name)
-
-    return current_app.ctx.authenticate
 
 
 def protected(scopes: Optional[List[str]] = None, require_all=True):
@@ -65,11 +59,33 @@ def auth_error_handler(request, exception):
     return json({"msg": "Authentication failed"}, status=401)
 
 
-def sanic_init_auth(app: Sanic, auth: AuthSpec, settings: SecuritySettings):
-    app.ctx.auth = auth
-    app.config.AUTH_SALT = settings.AUTH_SALT
-    app.config.AUTH_ALLOW_REFRESH = settings.AUTH_ALLOW_REFRESH
-    app.ctx.authenticate = get_class(settings.AUTH_FUNCTION)
+# def sanic_init_auth(app: Sanic, auth: AuthSpec, settings: Settings):
+#     app.ctx.auth = auth
+#     app.config.AUTH_SALT = settings.SECURITY.AUTH_SALT
+#     app.config.AUTH_ALLOW_REFRESH = settings.SECURITY.AUTH_ALLOW_REFRESH
+#     app.config.USERS = UserManager(settings.USER_MODEL)
+#     # app.ctx.authenticate = get_class(settings.AUTH_FUNCTION)
+#
+#     app.error_handler.add(WebAuthFailed, auth_error_handler)
+#     app.error_handler.add(MissingAuthorizationHeader, auth_error_handler)
 
-    app.error_handler.add(WebAuthFailed, auth_error_handler)
-    app.error_handler.add(MissingAuthorizationHeader, auth_error_handler)
+
+class WebApp(WebAppSpec):
+    name = "security"
+    package_dir = "services.security"
+    bp_modules = []
+
+    def init(self, app: Sanic, settings: Settings):
+        store = None
+        if settings.SECURITY.AUTH_ALLOW_REFRESH:
+            try:
+                store = RedisTokenStore(app.ctx.web_redis)
+            except AttributeError:
+                print("NO redis configuration")
+
+        app.ctx.auth = auth_from_settings(settings.SECURITY, store)
+        app.config.AUTH_SALT = settings.SECURITY.AUTH_SALT
+        app.config.AUTH_ALLOW_REFRESH = settings.SECURITY.AUTH_ALLOW_REFRESH
+
+        app.error_handler.add(WebAuthFailed, auth_error_handler)
+        app.error_handler.add(MissingAuthorizationHeader, auth_error_handler)
