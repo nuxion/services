@@ -6,6 +6,8 @@ authors = ["nuxion <nuxion@gmail.com>"]
 packages = [
    { include = "services"},
 ]
+homepage = "https://github.com/nuxion/services"
+repository = "https://github.com/nuxion/services"
 
 [tool.poetry.dependencies]
 python = ">=3.8,<3.11"
