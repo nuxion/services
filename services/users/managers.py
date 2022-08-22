@@ -37,12 +37,13 @@ class UserManager:
                            username: str,
                            password: str) -> UserMixin:
 
+
         user = await self.get(session, username)
         if user is None:
             raise AuthValidationFailed()
 
         is_valid = self._verify_password(
-            user._password, to_verify=password, salt=self._salt
+            user.password, to_verify=password, salt=self._salt
         )
         if not is_valid or not user.is_active:
             raise AuthValidationFailed()
@@ -70,7 +71,7 @@ class UserManager:
         um = self._model(**data)
         session.add(um)
         try:
-            session.flush()
+            await session.flush()
             return um
         except IntegrityError:
             pass

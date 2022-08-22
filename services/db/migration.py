@@ -34,26 +34,25 @@ def alembic_config(dburi: str,
 
 
 class Migration:
-    def __init__(self, dburi: str, *, package_dir: str, version_table: str):
+    def __init__(self, dburi, *, section: str,
+                 alembic_file: str = "alembic.ini"):
         self.dburi = dburi
-        self.package_dir = package_dir
-        self.version_table = version_table
+        self._file = alembic_file
+        self._section = section
+
+    def load_config(self) -> AlembicConfig:
+        alembic_cfg = AlembicConfig(self._file, ini_section=self._section)
+        alembic_cfg.set_main_option("sqlalchemy.url", self.dburi)
+        # _models = alembic_cfg.get_main_option("models_module")
+        # models_module = importlib.import_module(str(_models))
+        return alembic_cfg
 
     def upgrade(self, to="head"):
-        cfg = alembic_config(
-            self.dburi,
-            version_table=self.version_table,
-            ini_section=self.package_dir,
-            migrations_pkg=self.package_dir)
-
+        cfg = self.load_config()
         command.upgrade(cfg, to)
 
     def downgrade(self, to="head-1"):
-        cfg = alembic_config(
-            self.dburi,
-            version_table=self.version_table,
-            ini_section=self.package_dir,
-            migrations_pkg=self.package_dir)
+        cfg = self.load_config()
 
         command.downgrade(cfg, to)
 
@@ -75,12 +74,7 @@ class Migration:
         :param depends_on:  optional list of "depends on" identifiers
         """
 
-        cfg = alembic_config(
-            self.dburi,
-            version_table=self.version_table,
-            ini_section=self.package_dir,
-            migrations_pkg=self.package_dir)
-
+        cfg = self.load_config()
         command.revision(
             cfg,
             message=message,

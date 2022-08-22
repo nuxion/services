@@ -3,7 +3,7 @@ import os
 import click
 from rich.console import Console
 
-from services.commands.services import webcli
+from services.commands.web import webcli
 from services.commands.manager import managercli
 from services.commands.common import startproject
 

@@ -1,6 +1,7 @@
 import os
 
 import click
+from services import defaults
 
 
 @click.command(name="web")
@@ -14,7 +15,7 @@ import click
     "--access-log", "-L", default=False, is_flag=True, help="Enable access_log"
 )
 @click.option("--debug", "-D", default=False, is_flag=True, help="Enable Auto reload")
-@click.option("--settings-module", "-s", default=None, help="Fullpath to settings module")
+@click.option("--settings-module", "-s", default=defaults.SETTINGS_MODULE, help="Fullpath to settings module")
 def webcli(host, port, workers, auto_reload, access_log, debug, settings_module):
     """Run Web Server"""
     # pylint: disable=import-outside-toplevel

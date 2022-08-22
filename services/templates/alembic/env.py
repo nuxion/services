@@ -7,12 +7,12 @@ from sqlalchemy import engine_from_config, pool
 
 from alembic import context
 
-models = importlib.import_module("{{ data.app_name }}.models")
 
 # this is the Alembic Config object, which provides
 # access to the values within the .ini file in use.
 config = context.config
-
+models_mod = config.get_main_option("models_module")
+models = importlib.import_module(models_mod)
 # Interpret the config file for Python logging.
 # This line sets up loggers basically.
 fileConfig(config.config_file_name)

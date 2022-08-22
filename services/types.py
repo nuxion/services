@@ -12,6 +12,7 @@ class MigrationType(BaseModel):
     version_table: str
 
 
+
 class SecuritySettings(BaseSettings):
     JWT_PUBLIC: Optional[str] = None
     JWT_PRIVATE: Optional[str] = None
@@ -35,6 +36,7 @@ class Settings(BaseSettings):
     BASE_PATH: Union[str, Path]
     HOST: str = "localhost"
     PORT: str = "8000"
+    # DATABASES: Dict[str, Database] = {}
     SQL: str = "sqlite:///db.sqlite"
     ASQL: str = "sqlite+aiosqlite:///db.sqlite"
     REDIS_WEB: Optional[RedisDsn] = None
@@ -62,5 +64,3 @@ class Settings(BaseSettings):
 
     class Config:
         env_prefix = "SRV_"
-
-

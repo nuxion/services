@@ -1,6 +1,6 @@
 import sys
 
-from services import defaults, security
+from services import defaults, types
 # WARNING:
 # We do our best effort to keep sensible information private
 # but in the scenario of an intrusion into the network or machines
@@ -9,9 +9,10 @@ from services import defaults, security
 
 
 # General Folders for the server
-SECURITY = security.SecuritySettings(
+SECURITY = types.SecuritySettings(
     JWT_SECRET="Changeme",
     JWT_ALG="HS256",
+    AUTH_SALT="Changeme",
 )
 USER_MODEL = "services.security.models.UserModel"
 APPS = [

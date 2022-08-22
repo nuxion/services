@@ -20,7 +20,7 @@ class UserMixin:
 
     id = Column(BigInteger, primary_key=True)
     username = Column(String(), index=True, unique=True, nullable=False)
-    _password = Column("passwowrd", BINARY, nullable=True)
+    password = Column("password", BINARY, nullable=True)
     is_superuser = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     scopes = Column(String(), default="user", nullable=False)

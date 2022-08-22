@@ -8,6 +8,9 @@ from services.utils import init_blueprints
 
 
 class WebAppSpec(ABC):
+    """ Spec whichs define a WebApp.
+    A WebApp can have endpoints, or not.
+    """
     name: str
     bp_modules: List[str]
     package_dir: str
@@ -18,10 +21,3 @@ class WebAppSpec(ABC):
 
     def init_blueprints(self, app: Sanic):
         init_blueprints(app, self.bp_modules, package_dir=self.package_dir)
-        
-
-
-class MigrationSpec(ABC):
-    # models: List[str]
-    package_dir: str
-    version_table: str

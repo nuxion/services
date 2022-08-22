@@ -55,7 +55,7 @@ def final_words(project_name):
         " [bold magenta]To test if everything is working "
         " you can run the following command:[/]\n"
     )
-    console.print("\t[bold] srv web -L -D -s server_conf.settings[\]\n")
+    console.print("\t[bold] srv web -L -D[/]")
 
 
 def create_default(root, default_app):
@@ -83,8 +83,8 @@ def create_app(root, app_name):
     render_to_file(template="app/views_bp.py",
                    dst=f"{dst}/views_bp.py", data=data)
     render_to_file(template="app/models.py", dst=f"{dst}/models.py", data=data)
-    render_to_file(template="app/migrate.py",
-                   dst=f"{dst}/migrate.py", data=data)
+    #render_to_file(template="app/migrate.py",
+    #               dst=f"{dst}/migrate.py", data=data)
 
     mkdir_p(f"{dst}/migrations/versions")
     render_to_file(template="alembic/env.py",
@@ -96,7 +96,8 @@ def create_app(root, app_name):
         f.write((
             "\n\n"
             f"[{app_name}]\n"
-            f"script_location = %(here)s/{app_name}/migrations/\n"
             "sqlalchemy.url = \n"
+            f"script_location = %(here)s/{app_name}/migrations/\n"
+            f"models_module = {app_name}.models\n"
             f"version_table = { app_name }_version\n"
         ))

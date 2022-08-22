@@ -1,5 +1,5 @@
 from sanic import Sanic
-from services.base import MigrationSpec, WebAppSpec
+from services.base import WebAppSpec
 from services.types import Settings
 
 

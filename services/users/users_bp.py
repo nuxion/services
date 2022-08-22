@@ -19,14 +19,17 @@ async def login_handler(request: Request):
     manager = get_users_mg(request)
     session = request.ctx.session
     try:
-        creds = UserLogin(request.json)
-        user = await manager.authenticate(session, creds.username, creds.password)
+        creds = UserLogin(**request.json)
+        user = await manager.authenticate(session,
+                                          username=creds.username,
+                                          password=creds.password)
     except:
         raise WebAuthFailed()
     encoded = auth.encode(
         {"usr": user.username, "scopes": user.scopes.split(",")})
 
-    rtkn = await auth.store_refresh_token(user.username)
+    # rtkn = await auth.store_refresh_token(user.username)
+    rtkn = None
     return json(JWTResponse(access_token=encoded, refresh_token=rtkn).dict(), 200)
 
 
