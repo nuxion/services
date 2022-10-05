@@ -6,11 +6,46 @@ from pydantic import BaseModel, BaseSettings, RedisDsn
 from services import defaults
 
 
+class Database(BaseModel):
+    """
+    Database configuration object to be used with
+    :class:`services.db.sqlhelper.SQL` and
+    :class:`services.db.sqlhelper.AsyncSQL`
+
+    Examples:
+
+    .. highlight:: python
+    .. code-block:: python
+
+        from services.types import Database
+        dbconf = Database(uri="sqlite:////tmp/test.db")
+
+
+    :param uri: full dsl url sqlite:////tmp/test.db
+    :type uri: str
+    :param name: optional value to identify a database
+    :type name: str
+    :param pool_size: size of the pool
+    :type pool_size: int
+    :param max_overflow: TODO
+    :type max_overflow: int
+    :param debug: maps with echo param in sqlalachemy
+    :param description: optional value for metadata info about the database
+
+    """
+    uri: str
+    name: str = "default"
+    pool_size: int = 20
+    max_overflow: int = 0
+    debug: bool = False  # debug
+    # metadata
+    description: Optional[str] = None
+
+
 class MigrationType(BaseModel):
     models: List[str]
     package_dir: str
     version_table: str
-
 
 
 class SecuritySettings(BaseSettings):
@@ -36,7 +71,7 @@ class Settings(BaseSettings):
     BASE_PATH: Union[str, Path]
     HOST: str = "localhost"
     PORT: str = "8000"
-    # DATABASES: Dict[str, Database] = {}
+    DATABASES: Dict[str, Database] = {}
     SQL: str = "sqlite:///db.sqlite"
     ASQL: str = "sqlite+aiosqlite:///db.sqlite"
     REDIS_WEB: Optional[RedisDsn] = None
