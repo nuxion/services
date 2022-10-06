@@ -7,9 +7,9 @@ from pathlib import Path
 import click
 from rich.console import Console
 from rich.prompt import Prompt
-
 from services import conf, defaults, init_script, types
 from services.db import SQL, AsyncSQL, Migration
+from services.db.sqlhelper import AsyncSQL as AsyncSQL2
 from services.users.managers import UserManager
 from services.utils import get_class, mkdir_p
 
@@ -17,14 +17,12 @@ console = Console()
 
 
 async def create_user(settings: types.Settings, data):
-    db = AsyncSQL(settings.ASQL)
+    db = AsyncSQL2(settings.DATABASES[settings.USER_DB])
     await db.init()
     # session = db.sessionmaker()
-    manager = UserManager(settings.USER_MODEL,
+    manager = UserManager(db, model_class=settings.USER_MODEL,
                           salt=settings.SECURITY.AUTH_SALT)
-    async with db.sessionmaker() as session:
-        user = await manager.create(session, data)
-        await session.commit()
+    user = await manager.create(data)
     return user
 
 

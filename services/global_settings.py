@@ -14,7 +14,6 @@ SECURITY = types.SecuritySettings(
     JWT_ALG="HS256",
     AUTH_SALT="Changeme",
 )
-USER_MODEL = "services.security.models.UserModel"
 APPS = [
     "services.users.web.WebApp",
 ]

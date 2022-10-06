@@ -2,7 +2,7 @@ from sanic import Blueprint, Request
 from sanic.response import json
 from sanic_ext import openapi
 from services.security import get_auth, protected
-from .web import get_users_mg
+from services.users.web import get_users_mg
 
 from .errors import AuthValidationFailed, WebAuthFailed
 from .types import JWTResponse, UserLogin
@@ -17,11 +17,9 @@ users_bp = Blueprint("users_api", url_prefix="users", version="v1")
 async def login_handler(request: Request):
     auth = get_auth(request)
     manager = get_users_mg(request)
-    session = request.ctx.session
     try:
         creds = UserLogin(**request.json)
-        user = await manager.authenticate(session,
-                                          username=creds.username,
+        user = await manager.authenticate(username=creds.username,
                                           password=creds.password)
     except:
         raise WebAuthFailed()

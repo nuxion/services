@@ -1,24 +1,13 @@
 from rich.console import Console
+from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
 from services.jtemplates import render_to_file
 from services.utils import get_parent_folder, mkdir_p, normalize_name
-from rich.panel import Panel
+
 console = Console()
 FOLDERS = [
     "server_conf",
-]
-
-APP_FOLDERS = [
-    "migrations"
-]
-
-APP_FILES = [
-    {"tpl": "alembic.ini", "dst": "migrations/alembic.ini"},
-    {"tpl": "__init__.py", "dst": "__init__.py"},
-    {"tpl": "web.py", "dst": "web.py"},
-    {"tpl": "models.py", "dst": "models.py"},
-    {"tpl": "views_bp.py", "dst": "views_bp.py"},
 ]
 
 
@@ -83,8 +72,8 @@ def create_app(root, app_name):
     render_to_file(template="app/views_bp.py",
                    dst=f"{dst}/views_bp.py", data=data)
     render_to_file(template="app/models.py", dst=f"{dst}/models.py", data=data)
-    #render_to_file(template="app/migrate.py",
-    #               dst=f"{dst}/migrate.py", data=data)
+    render_to_file(template="app/db.py",
+                   dst=f"{dst}/db.py", data=data)
 
     mkdir_p(f"{dst}/migrations/versions")
     render_to_file(template="alembic/env.py",

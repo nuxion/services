@@ -35,6 +35,7 @@ class Database(BaseModel):
     """
     uri: str
     name: str = "default"
+    kind: str = "async"
     pool_size: int = 20
     max_overflow: int = 0
     debug: bool = False  # debug
@@ -74,14 +75,15 @@ class Settings(BaseSettings):
     DATABASES: Dict[str, Database] = {}
     SQL: str = "sqlite:///db.sqlite"
     ASQL: str = "sqlite+aiosqlite:///db.sqlite"
-    REDIS_WEB: Optional[RedisDsn] = None
-    REDIS_WEB_POOL_SIZE: int = 10
+    REDIS: Optional[RedisDsn] = None
+    REDIS_POOL_SIZE: int = 10
     TEMPLATES_DIR: Optional[str] = None
     TEMPLATES_PACKAGE_NAME: Optional[str] = None
     DEV_MODE: bool = False
     SECURITY: Optional[SecuritySettings] = None
-    AUTH_ENDPOINTS: bool = True
+    USER_ENDPOINTS: bool = True
     USER_MODEL: Optional[str] = None
+    USER_DB: str =  "default"
 
     APPS: List[str] = []
 

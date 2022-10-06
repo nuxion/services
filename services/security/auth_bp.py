@@ -2,6 +2,7 @@ from sanic import Blueprint, Request
 from sanic.response import json
 from sanic_ext import openapi
 from services.security import get_auth, get_user_mg, protected
+from services.db.plugin import AsyncDBHelper
 
 from .errors import AuthValidationFailed, WebAuthFailed
 from .types import JWTResponse, UserLogin
@@ -13,15 +14,15 @@ auth_bp = Blueprint("auth_api", url_prefix="auth", version="v1")
 @openapi.response(200, {"application/json": JWTResponse})
 @openapi.response(403, dict(msg=str), "Not Found")
 @openapi.body(UserLogin)
-async def login_handler(request: Request):
+async def login_handler(request: Request, db: AsyncDBHelper):
     auth = get_auth(request)
     manager = get_user_mg(request)
-    session = request.ctx.session
-    try:
-        creds = UserLogin(request.json)
-        user = await manager.authenticate(session, creds.username, creds.password)
-    except:
-        raise WebAuthFailed()
+    async with db.get_session()() as session:
+        try:
+            creds = UserLogin(request.json)
+            user = await manager.authenticate(session, creds.username, creds.password)
+        except:
+            raise WebAuthFailed()
     encoded = auth.encode(
         {"usr": user.username, "scopes": user.scopes.split(",")})
 

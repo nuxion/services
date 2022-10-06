@@ -5,7 +5,8 @@ from services import types
 from sqlalchemy import MetaData, create_engine, event, inspect
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy.ext.asyncio import AsyncSession, create_async_engine
+from sqlalchemy.ext.asyncio import (AsyncSession, async_scoped_session,
+                                    create_async_engine)
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 # from sqlalchemy.dialects.postgresql.base import PGInspector
 from sqlalchemy.orm import Session, scoped_session, sessionmaker
@@ -124,6 +125,9 @@ class AsyncSQL:
     """
     As example checks:
     https://docs.sqlalchemy.org/en/14/_modules/examples/asyncio/async_orm.html
+
+    scoped_session, useful in thread environments is removed in Async,
+    AsyncSession is prefered insted: https://docs.sqlalchemy.org/en/14/orm/extensions/asyncio.html#using-asyncio-scoped-session
     """
 
     # Meta = MetaData()
@@ -135,8 +139,9 @@ class AsyncSQL:
         self.conf = db
         self._future = future
         self._autoflush = autoflush
+        self._set_session_factory = set_session_factory
 
-    async def init(self, session_factory=True):
+    async def init(self):
         if "sqlite" in self.conf.uri.split("://", maxsplit=1)[0]:
             self._engine = create_async_engine(self.conf.uri,
                                                echo=self.conf.debug)
@@ -148,7 +153,7 @@ class AsyncSQL:
                 echo=self.conf.debug
             )
 
-        if session_factory:
+        if self._set_session_factory:
             self._factory = self.sessionmaker(
                 autoflush=self._autoflush, future=self._future)
 
@@ -172,25 +177,9 @@ class AsyncSQL:
             expire_on_commit=expire_on_commit, class_=AsyncSession
         )
 
-    def session_factory(self) -> Session:
+    def session_factory(self) -> AsyncSession:
         """ it's actually returns a session """
         return self._factory()
-
-    def scoped_session(self, autoflush=True, future=True) -> Session:
-        """ wrapper around SqlAlchemy session_scoped
-
-        Create a single scoped_session registry when the web application
-        first starts, ensuring that this object is accessible by the
-        rest of the application.
-
-        ensures that scoped_session.remove() is called when the web
-        request ends.
-
-        :param future: default True then Query 2.0 style
-        """
-        return scoped_session(self.sessionmaker(
-            autoflush=autoflush,
-            future=future))
 
     @property
     def engine(self) -> AsyncEngine:

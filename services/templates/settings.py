@@ -17,6 +17,19 @@ SECURITY = types.SecuritySettings(
 
 USER_MODEL = "{{ data.app_name }}.models.UserModel"
 
+DATABASES = {
+    "default-sync": types.Database(
+        name="default-sync",
+        uri="sqlite:///db.sqlite",
+        description="Default database",
+    ),
+    "default": types.Database(
+        name="default",
+        uri="sqlite+aiosqlite:///db.sqlite",
+        description="Default database",
+    )
+}
+
 APPS = [
     # "services.users.web.WebApp",
     "services.security.web.WebApp",

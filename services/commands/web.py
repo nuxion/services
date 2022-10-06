@@ -15,7 +15,8 @@ from services import defaults
     "--access-log", "-L", default=False, is_flag=True, help="Enable access_log"
 )
 @click.option("--debug", "-D", default=False, is_flag=True, help="Enable Auto reload")
-@click.option("--settings-module", "-s", default=defaults.SETTINGS_MODULE, help="Fullpath to settings module")
+@click.option("--settings-module", "-s", default="server_conf.settings",
+              help="Fullpath to settings module")
 def webcli(host, port, workers, auto_reload, access_log, debug, settings_module):
     """Run Web Server"""
     # pylint: disable=import-outside-toplevel
@@ -25,7 +26,11 @@ def webcli(host, port, workers, auto_reload, access_log, debug, settings_module)
     # from playpy.web import sanic_init_indexer
     # from playpy.types import Settings as PlaySettings
     pwd = os.getcwd()
-    settings = load_conf(settings_module)
+
+    _server_conf = os.getenv(defaults.SETTINGS_MODULE_VAR,
+                             settings_module)
+
+    settings = load_conf(_server_conf)
 
     host = host or settings.HOST
     port = port or settings.PORT

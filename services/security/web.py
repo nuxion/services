@@ -14,6 +14,22 @@ from .errors import (AuthValidationFailed, MissingAuthorizationHeader,
 
 
 def get_auth(request: Request) -> AuthSpec:
+    """
+    a shortcut to get the Auth object from a web context
+    it will be deprecated.
+
+    """
+
+    return request.app.ctx.auth
+
+
+def get_req_auth(request: Request) -> AuthSpec:
+    """a shortcut to get the Auth object from a web context"""
+
+    return request.app.ctx.auth
+
+
+def get_app_auth(request: Request) -> AuthSpec:
     """a shortcut to get the Auth object from a web context"""
 
     current_app: Sanic = Sanic.get_app(request.app.name)
@@ -57,17 +73,6 @@ def protected(scopes: Optional[List[str]] = None, require_all=True):
 
 def auth_error_handler(request, exception):
     return json({"msg": "Authentication failed"}, status=401)
-
-
-# def sanic_init_auth(app: Sanic, auth: AuthSpec, settings: Settings):
-#     app.ctx.auth = auth
-#     app.config.AUTH_SALT = settings.SECURITY.AUTH_SALT
-#     app.config.AUTH_ALLOW_REFRESH = settings.SECURITY.AUTH_ALLOW_REFRESH
-#     app.config.USERS = UserManager(settings.USER_MODEL)
-#     # app.ctx.authenticate = get_class(settings.AUTH_FUNCTION)
-#
-#     app.error_handler.add(WebAuthFailed, auth_error_handler)
-#     app.error_handler.add(MissingAuthorizationHeader, auth_error_handler)
 
 
 class WebApp(WebAppSpec):

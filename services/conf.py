@@ -37,18 +37,8 @@ def define_base_path() -> str:
     it will use git, if fail it will go to an upper level.
     """
     root_dir = os.getcwd()
-    base_path = root_dir
 
-    base_var = os.environ.get(defaults.BASE_PATH_ENV)
-    # is_interactive = _is_interactive_shell()
-    if not base_var:
-        try:
-            base_path = _execute_cmd("git rev-parse --show-toplevel")
-        except:
-            # base_path = str(Path(root_dir).parents[0])
-            pass
-    elif base_var:
-        base_path = base_var
+    base_path = os.environ.get(defaults.BASE_PATH_ENV, root_dir)
 
     return base_path
 
@@ -57,7 +47,7 @@ def load_conf(settings_module=None) -> Settings:
     settings_module = settings_module or DEFAULT_MODULE
     module_loaded = settings_module
     base_path = define_base_path()
-    sys.path.append(base_path)
+    sys.path.insert(0, base_path)
 
     try:
         mod = importlib.import_module(settings_module)

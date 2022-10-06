@@ -1,5 +1,10 @@
-from sanic import Request, Sanic
+from functools import wraps
+from inspect import isawaitable
+from typing import List, Optional
+
+from sanic import Request, Sanic, json
 from services.base import WebAppSpec
+from services.security.authentication import auth_from_settings
 from services.types import Settings
 
 from .managers import UserManager
@@ -17,10 +22,17 @@ class WebApp(WebAppSpec):
     bp_modules = ["users_bp"]
     package_dir = "services.users"
 
-    def init(self, app: Sanic, settings: Settings):
-        """ complete with your own logic """
-        app.ctx.users_mg = UserManager(settings.USER_MODEL,
+    def hook_users(self, app: Sanic):
+        settings = self.get_app_settings(app)
+        db = self.get_db(app, settings.USER_DB)
+        app.ctx.users_mg = UserManager(db, model_class=settings.USER_MODEL,
                                        salt=settings.SECURITY.AUTH_SALT)
 
-        if settings.AUTH_ENDPOINTS:
+    def init(self, app: Sanic, settings: Optional[Settings] = None):
+        """ complete with your own logic """
+        settings = settings or self.get_app_settings(app)
+
+        app.register_listener(self.hook_users, "before_server_start")
+
+        if settings.USER_ENDPOINTS:
             self.init_blueprints(app)
