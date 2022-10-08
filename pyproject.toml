@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "ai-services"
-version = "0.2.0"
+version = "0.3.0"
 description = "A simple web framework based on Sanic"
 authors = ["nuxion <nuxion@gmail.com>"]
 packages = [
