@@ -21,6 +21,7 @@ class UserMixin:
     id = Column(BigInteger, primary_key=True)
     username = Column(String(), index=True, unique=True, nullable=False)
     password = Column("password", BINARY, nullable=True)
+    email = Column(String(), index=True, nullable=True, unique=True)
     is_superuser = Column(Boolean, default=False, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     scopes = Column(String(), default="user", nullable=False)
@@ -39,22 +40,3 @@ class UserMixin:
     def to_dict(self) -> Dict[str, Any]:
         raise NotImplementedError()
 
-
-# class UserModel(UserMixin, Base):
-#     __tablename__ = "srv_user"
-#     __mapper_args__ = {"eager_defaults": True}
-# 
-#     email = Column(String(), index=True, nullable=True, unique=True)
-# 
-#     def to_dict(self) -> Dict[str, Any]:
-#         return {
-#             "id": self.id,
-#             "username": self.username,
-#             "password": self.password,
-#             "email": self.email,
-#             "is_superuser": self.is_superuser,
-#             "is_active": self.is_active,
-#             "scopes": self.scopes,
-#             "created_at": self.created_at,
-#             "updated_at": self.updated_at
-#         }

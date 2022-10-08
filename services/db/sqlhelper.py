@@ -35,16 +35,16 @@ class SQL:
 
     @classmethod
     def from_uri(cls, uri: str, init_engine=True) -> "SQL":
-        _db = types.Database(uri=uri)
+        _db = types.Database(sync_url=uri)
         return cls(_db, init_engine=init_engine)
 
     def _init(self, session_factory=True):
-        if "sqlite" in self.conf.uri.split("://", maxsplit=1)[0]:
-            self._engine = create_engine(self.conf.uri,
+        if "sqlite" in self.conf.sync_url.split("://", maxsplit=1)[0]:
+            self._engine = create_engine(self.conf.sync_url,
                                          echo=self.conf.debug)
         else:
             self._engine = create_engine(
-                self.conf.uri,
+                self.conf.sync_url,
                 pool_size=self.conf.pool_size,
                 max_overflow=self.conf.max_overflow,
                 echo=self.conf.debug
@@ -142,12 +142,12 @@ class AsyncSQL:
         self._set_session_factory = set_session_factory
 
     async def init(self):
-        if "sqlite" in self.conf.uri.split("://", maxsplit=1)[0]:
-            self._engine = create_async_engine(self.conf.uri,
+        if "sqlite" in self.conf.async_url.split("://", maxsplit=1)[0]:
+            self._engine = create_async_engine(self.conf.async_url,
                                                echo=self.conf.debug)
         else:
             self._engine = create_async_engine(
-                self.conf._uri,
+                self.conf.async_url,
                 pool_size=self.conf.pool_size,
                 max_overflow=self.conf.max_overflow,
                 echo=self.conf.debug
@@ -158,8 +158,8 @@ class AsyncSQL:
                 autoflush=self._autoflush, future=self._future)
 
     @classmethod
-    def from_uri(cls, uri: str, init_engine=False) -> "BaseSQL":
-        _db = types.Database(uri=uri)
+    def from_uri(cls, uri: str, init_engine=False) -> "AsyncSQL":
+        _db = types.Database(async_url=uri)
         return cls(_db)
 
     def sessionmaker(self,

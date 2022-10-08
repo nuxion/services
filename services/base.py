@@ -5,9 +5,9 @@ from pydantic import BaseModel
 from sanic import HTTPResponse, Request, Sanic
 
 from services.db.sqlhelper import AsyncSQL
+from services.security.base import AuthSpec
 from services.types import Settings
 from services.utils import init_blueprints
-from services.security.base import AuthSpec
 
 
 class WebAppSpec(ABC):
@@ -21,7 +21,7 @@ class WebAppSpec(ABC):
     # dependencies: List[Callable]
 
     @abstractmethod
-    def init(self, app: Sanic, settings: Optional[Settings] = None):
+    def init(self, app: Sanic, settings: Settings):
         pass
 
     def init_blueprints(self, app: Sanic):
@@ -35,7 +35,6 @@ class WebAppSpec(ABC):
 
     def get_request_settings(self, request: Request) -> Settings:
         return request.app.config.SETTINGS
-
 
 
 class PluginSpec(ABC):

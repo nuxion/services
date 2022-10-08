@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Union
 
 from sanic import Request
 
-from .types import JWTResponse
+from services.types import JWTResponse, JWTConfig
 
 
 class TokenStoreSpec(ABC):
@@ -26,6 +26,10 @@ class TokenStoreSpec(ABC):
 
 
 class AuthSpec(ABC):
+
+    conf: JWTConfig
+    store: Optional[TokenStoreSpec]
+
     @abstractmethod
     def encode(self, payload: Dict[str, Any], exp=None, iss=None, aud=None):
         pass
@@ -54,4 +58,3 @@ class AuthSpec(ABC):
     @abstractmethod
     async def store_refresh_token(self, username: str) -> str:
         pass
-

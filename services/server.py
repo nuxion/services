@@ -55,7 +55,7 @@ def create_srv(
     app.config.SETTINGS = settings
     if settings.REDIS:
         app.ctx.redis = create_redis(settings.REDIS)
-    if settings.ASQL:
+    if settings.DATABASES:
         init_db(app, settings=settings)
 
     if auth_enabled:

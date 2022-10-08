@@ -1,11 +1,10 @@
 from sanic import Blueprint, Request
 from sanic.response import json
 from sanic_ext import openapi
+from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security import protected
 from services.types import JWTResponse, UserLogin
-from services.users.web import get_users_mg
-
-from .errors import AuthValidationFailed, WebAuthFailed
+from services.users import get_users_mg
 
 users_bp = Blueprint("users_api", url_prefix="users", version="v1")
 

@@ -18,14 +18,10 @@ SECURITY = types.SecuritySettings(
 USER_MODEL = "{{ data.app_name }}.models.UserModel"
 
 DATABASES = {
-    "default-sync": types.Database(
-        name="default-sync",
-        uri="sqlite:///db.sqlite",
-        description="Default database",
-    ),
     "default": types.Database(
         name="default",
-        uri="sqlite+aiosqlite:///db.sqlite",
+        async_url="sqlite+aiosqlite:///db.sqlite",
+        sync_url="sqlite:///db.sqlite",
         description="Default database",
     )
 }

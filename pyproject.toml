@@ -22,6 +22,7 @@ Jinja2 = "^3.1.2"
 
 [tool.poetry.scripts]
 srv = "services.cli:cli"
+create-srv-project = "services.cli_project:create_service_project"
 
 
 [build-system]

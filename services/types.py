@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
@@ -33,9 +34,9 @@ class Database(BaseModel):
     :param description: optional value for metadata info about the database
 
     """
-    uri: str
+    async_url: Optional[str] = None
+    sync_url: Optional[str] = None
     name: str = "default"
-    kind: str = "async"
     pool_size: int = 20
     max_overflow: int = 0
     debug: bool = False  # debug
@@ -73,17 +74,17 @@ class Settings(BaseSettings):
     HOST: str = "localhost"
     PORT: str = "8000"
     DATABASES: Dict[str, Database] = {}
-    SQL: str = "sqlite:///db.sqlite"
-    ASQL: str = "sqlite+aiosqlite:///db.sqlite"
     REDIS: Optional[RedisDsn] = None
     REDIS_POOL_SIZE: int = 10
     TEMPLATES_DIR: Optional[str] = None
     TEMPLATES_PACKAGE_NAME: Optional[str] = None
     DEV_MODE: bool = False
     SECURITY: Optional[SecuritySettings] = None
+    CUSTOM_COMMANDS: List[str] = []
     USER_ENDPOINTS: bool = True
     USER_MODEL: Optional[str] = None
     USER_DB: str = "default"
+    USER_MANAGER_CLASS = "services.user.managers.UserManager"
 
     APPS: List[str] = []
 
@@ -141,5 +142,3 @@ class TokenCreds(BaseModel):
 
     class Config:
         extra = "forbid"
-
-

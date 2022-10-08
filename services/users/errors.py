@@ -33,7 +33,3 @@ class Unauthorized(SanicJWTException, SanicUnauthorized):
 class AuthValidationFailed(Exception):
     pass
 
-
-class InvalidUser(Exception):
-    def __init__(self, username, **kwargs):
-        super().__init__(f"Invalid user {username}")

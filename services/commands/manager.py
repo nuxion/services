@@ -41,7 +41,7 @@ def managercli():
 @click.option("--to", "-t", default="head", help="Revision to upgrade or downgrade")
 @click.option("--head", default=None, help="Specify head revision or <branchname>@head to base new revision.")
 @click.option("--branch-label", "-b", default=None, help="Specify a branch label to apply to the new revision")
-@click.option("--name", "-n", default=None, help="package name where migration should be located")
+@click.option("--name", "-n", default=None, help="package name where migration is located")
 @click.option("--depends-on", "-d", help="list of 'depends on' identifiers")
 @click.argument("action", type=click.Choice(["create", "drop", "upgrade", "downgrade", "revision"]))
 @click.option("--settings-module", "-s", default=defaults.SETTINGS_MODULE, help="Fullpath to settings module")
@@ -86,15 +86,6 @@ def dbcli(action, message, rev_id, to, head, branch_label, name, depends_on, set
             autogenerate=True)
     else:
         console.print("[red bold]Wrong param...[/]")
-
-
-@managercli.command(name="create-app")
-@click.argument("appname")
-def create_app(appname):
-    """Create the structure of an app"""
-    root = Path.cwd()
-    init_script.create_app(root, appname)
-    console.print(f"[green bold]App {appname} created.[/]")
 
 
 @managercli.command(name="users")

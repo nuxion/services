@@ -4,6 +4,7 @@ from typing import List, Optional
 
 from sanic import Request, Sanic, json
 from services.base import WebAppSpec
+from services.security import get_app_auth
 from services.security.authentication import auth_from_settings
 from services.types import Settings
 
@@ -25,12 +26,17 @@ class WebApp(WebAppSpec):
     def hook_users(self, app: Sanic):
         settings = self.get_app_settings(app)
         db = self.get_db(app, settings.USER_DB)
-        app.ctx.users_mg = UserManager(db, model_class=settings.USER_MODEL,
-                                       salt=settings.SECURITY.AUTH_SALT)
+        auth = get_app_auth(app)
 
-    def init(self, app: Sanic, settings: Optional[Settings] = None):
+        app.ctx.users_mg = UserManager(
+            auth,
+            db=db,
+            model_class=settings.USER_MODEL,
+            salt=settings.SECURITY.AUTH_SALT,
+        )
+
+    def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
-        settings = settings or self.get_app_settings(app)
 
         app.register_listener(self.hook_users, "before_server_start")
 

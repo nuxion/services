@@ -8,6 +8,8 @@ import unicodedata
 from importlib import import_module
 from pathlib import Path
 
+from sqlalchemy.sql.schema import MetaData
+
 from services import defaults
 from services.errors import CommandExecutionException
 
@@ -178,3 +180,8 @@ def init_blueprints(app, blueprints_allowed, package_dir="services.web"):
     for bp in blueprints:
         print("Adding blueprint: ", bp.name)
         app.blueprint(bp)
+
+
+def get_meta_from_app(app_name) -> MetaData:
+    Base = get_class(f"{app_name}.db.Base")
+    return Base.metadata

@@ -3,7 +3,7 @@ import importlib
 import os
 from datetime import datetime, timedelta
 
-from .types import KeyPairs
+from services.types import KeyPairs
 
 
 def open_keys(pub, priv) -> KeyPairs:
