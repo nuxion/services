@@ -6,8 +6,7 @@ from typing import Any, Callable, Dict, List, Optional, Set
 import jwt
 from services.errors import BadConfigurationException
 from services.security import AuthSpec, TokenStoreSpec, open_keys, scopes
-from services.security.types import JWTConfig, JWTResponse
-from services.types import SecuritySettings
+from services.types import SecuritySettings, JWTConfig, JWTResponse
 from services.utils import get_class
 
 from .errors import AuthValidationFailed
@@ -15,6 +14,7 @@ from .utils import get_delta
 
 
 class Auth(AuthSpec):
+
     def __init__(self, conf: JWTConfig, store: Optional[TokenStoreSpec] = None):
         """
         It is a wrapper around jwt which produces jwt tokens.

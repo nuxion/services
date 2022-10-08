@@ -83,7 +83,7 @@ class Settings(BaseSettings):
     SECURITY: Optional[SecuritySettings] = None
     USER_ENDPOINTS: bool = True
     USER_MODEL: Optional[str] = None
-    USER_DB: str =  "default"
+    USER_DB: str = "default"
 
     APPS: List[str] = []
 
@@ -101,3 +101,45 @@ class Settings(BaseSettings):
 
     class Config:
         env_prefix = "SRV_"
+
+
+class KeyPairs(BaseModel):
+    public: str
+    private: str
+
+
+class JWTConfig(BaseModel):
+    alg: str
+    exp_min: int = 30
+    keys: Optional[KeyPairs] = None
+    secret: Optional[str] = None
+    issuer: Optional[str] = None
+    audience: Optional[str] = None
+    requires_claims: List[str] = ["exp"]
+    ttl_refresh_token: int = 3600 * 168  # 7 days
+
+    class Config:
+        extra = "forbid"
+
+
+class UserLogin(BaseModel):
+    username: str
+    password: str
+
+    class Config:
+        extra = "forbid"
+
+
+class JWTResponse(BaseModel):
+    access_token: str
+    refresh_token: Optional[str] = None
+
+
+class TokenCreds(BaseModel):
+    access_token: str
+    refresh_token: Optional[str] = None
+
+    class Config:
+        extra = "forbid"
+
+
