@@ -16,29 +16,3 @@ def get_users_mg(request: Request) -> UserManager:
     current_app: Sanic = Sanic.get_app(request.app.name)
 
     return current_app.ctx.users_mg
-
-
-class WebApp(WebAppSpec):
-    name = "users"
-    bp_modules = ["users_bp"]
-    package_dir = "services.users"
-
-    def hook_users(self, app: Sanic):
-        settings = self.get_app_settings(app)
-        db = self.get_db(app, settings.USER_DB)
-        auth = get_app_auth(app)
-
-        app.ctx.users_mg = UserManager(
-            auth,
-            db=db,
-            model_class=settings.USER_MODEL,
-            salt=settings.SECURITY.AUTH_SALT,
-        )
-
-    def init(self, app: Sanic, settings: Settings):
-        """ complete with your own logic """
-
-        app.register_listener(self.hook_users, "before_server_start")
-
-        if settings.USER_ENDPOINTS:
-            self.init_blueprints(app)
