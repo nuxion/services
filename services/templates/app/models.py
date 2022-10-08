@@ -20,7 +20,7 @@ class UserModel(UserMixin, Base):
             "id": self.id,
             "username": self.username,
             "password": self.password,
-            "fullname": self.fullname
+            "fullname": self.fullname,
             "email": self.email,
             "is_superuser": self.is_superuser,
             "is_active": self.is_active,
