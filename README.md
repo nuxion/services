@@ -115,7 +115,7 @@ Note: srv db uses alembic under the hood and Alembic is configurated in a way th
 
 Regardless FastAPI is the most popular (50K starts in GH vs 16k for sanic) async framework right know and django is the most feature complete and stable(no proofs) web framework in the python world. What is very appealing for me is the own server implementation of Sanic which seems simpler than WSGI and AWSGI (you can still use ASGI with sanic if you want), and because most of the time I need to build web apis to expose Machine Learning models, I found it to be a good match. 
 
-Usually models are very CPU and Mem intensive (an average Word2vec model needs at least 500mb with peaks of 1gb of RAM), so the strategy here is to load it in one main process and share it between the rest of workers. Sanic has a lot of conversations in their community about how process could be managed https://amhopkins.com/posts/background-job-worker.html 
+Usually models are very CPU and Mem intensive (an average Word2vec model needs at least 500mb with peaks of 1gb of RAM), so the strategy here is to load it in one main process and share it between the rest of workers. Sanic has a lot of conversations in their community about how process could be managed https://amhopkins.com/background-job-worker. 
 
 And why not Django, is because their ORM. I found SQLAlchemy more flexible and lightway than Django ORM. 
 
