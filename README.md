@@ -1,5 +1,10 @@
 # Services
 
+[![PyPI - Version](https://img.shields.io/pypi/v/ai-services.svg)](https://pypi.org/project/ai-services)
+[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/ai-services.svg)](https://pypi.org/project/ai-services)
+
+----
+
 This is a pseudo-framework built in the shoulders of [sanic](sanic.dev/) and inspired by [Django](https://www.djangoproject.com/)
 
 The intention is to provide some tools for web services development with focus on data services. 
@@ -87,8 +92,10 @@ Note: srv db uses alembic under the hood and Alembic is configurated in a way th
 
 ## Roadmap:
 
-- [ ] UserManager stabilization
+- [ ] UserManager abstraction
 - [ ] Add groups 
+- [ ] User Registration
+- [ ] User list defined by files?
 - [ ] Expand command for users administration
 - [ ] Custom commands hooks in `srv` 
 - [ ] Dev env files {Makefile, Dockerfile, docker-compose, etc}

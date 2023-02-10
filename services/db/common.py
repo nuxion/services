@@ -1,5 +1,5 @@
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.mutable import Mutable
 from sqlalchemy.types import BINARY, DECIMAL, JSON, BigInteger
 

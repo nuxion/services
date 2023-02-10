@@ -1,59 +1,87 @@
-[tool.poetry]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
 name = "ai-services"
-version = "0.3.0"
-description = "A simple web framework based on Sanic"
-authors = ["nuxion <nuxion@gmail.com>"]
-packages = [
-   { include = "services"},
+description = '"A simple web framework based on Sanic"'
+readme = "README.md"
+requires-python = ">=3.7"
+license = "MIT"
+keywords = []
+authors = [
+  { name = "nuxion", email = "nuxion@gmail.com" },
 ]
-homepage = "https://github.com/nuxion/services"
-repository = "https://github.com/nuxion/services"
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Programming Language :: Python",
+  "Programming Language :: Python :: 3.7",
+  "Programming Language :: Python :: 3.8",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: Implementation :: CPython",
+  "Programming Language :: Python :: Implementation :: PyPy",
+]
+dependencies = [
+    "click~=8.1.3",
+    "SQLAlchemy~=1.4.46",
+    "alembic~=1.9.3",
+    "Jinja2~=3.1.2",
+    "rich~=12.5.1",
+    "cryptography~=39.0.1",
+    "PyJWT~=2.6.0",
+    "pydantic~=1.10.4",
+    "sanic~=22.6.0",
+    "sanic-ext~=22.6.0",
+    "redis~=4.5.1"
+    ]
+dynamic = ["version"]
 
-[tool.poetry.dependencies]
-python = ">=3.8,<3.11"
-sanic = {version = "^22.6.0", extras = ["ext"]}
-pydantic = "^1.9.1"
-PyJWT = "^2.4.0"
-rich = "^12.5.1"
-cryptography = "^37.0.4"
-SQLAlchemy = "^1.4.39"
-alembic = "^1.8.1"
-Jinja2 = "^3.1.2"
+[project.urls]
+Documentation = "https://github.com/nuxion/services#readme"
+Issues = "https://github.com/nuxion/services/issues"
+Source = "https://github.com/nuxion/services"
 
-[tool.poetry.scripts]
+[project.scripts]
 srv = "services.cli:cli"
 create-srv-project = "services.cli_project:create_service_project"
 
+[tool.hatch.version]
+path = "services/__about__.py"
 
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
+[tool.hatch.envs.default]
+dependencies = [
+  "pytest",
+  "pytest-asyncio",
+  "pytest-cov",
+  "pylint",
+  "isort",
+  "autopep8",
+  "sqlalchemy-stubs",
+  "ipython",
+  "Sphinx~=5.3.0",
+  "sphinx-autobuild",
+  "sphinx-rtd-theme",
+  "aiosqlite~=0.18.0"
+]
+[tool.hatch.envs.default.scripts]
+cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=services --cov=tests {args}"
+no-cov = "cov --no-cov {args}"
 
-[tool.poetry.dev-dependencies]
-sqlalchemy-stubs = "^0.4"
-pylint = "^2.10.2"
-isort = "^5.9.3"
-autopep8 = "^1.5.7"
-matplotlib = "^3.4.3"
-types-requests = "^2.25.9"
-types-redis = "^3.5.11"
-openpyxl = "^3.0.9"
-types-ujson = "^4.2.0"
-types-dateparser = "^1.0.8"
-types-pytz = "^2021.3.1"
-memory-profiler = "^0.60.0"
-pytest-asyncio = "^0.16.0"
-black = "^22.1.0"
-Sphinx = "^4.4.0"
-sphinx-autobuild = "^2021.3.14"
-redislite = "^6.0.674960"
-factory-boy = "^3.2.1"
-pre-commit = "^2.17.0"
-tox = "^3.24.5"
-pytest-mock = "^3.7.0"
-pytest-cov = "^3.0.0"
-sphinx-rtd-theme = "^1.0.0"
-sanic-testing = "^0.8.2"
-pydeps = "^1.10.18"
-aiosqlite = "^0.17.0"
-ipython = "^8.4.0"
+[[tool.hatch.envs.test.matrix]]
+python = ["37", "38", "39", "310", "311"]
+
+[tool.coverage.run]
+branch = true
+parallel = true
+omit = [
+  "services/__about__.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+  "no cov",
+  "if __name__ == .__main__.:",
+  "if TYPE_CHECKING:",
+]
