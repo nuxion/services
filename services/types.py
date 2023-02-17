@@ -2,7 +2,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel, BaseSettings, RedisDsn
+from pydantic import BaseModel, BaseSettings, Field, RedisDsn
 
 from services import defaults
 
@@ -34,6 +34,7 @@ class Database(BaseModel):
     :param description: optional value for metadata info about the database
 
     """
+
     async_url: Optional[str] = None
     sync_url: Optional[str] = None
     name: str = "default"
@@ -76,7 +77,7 @@ class Settings(BaseSettings):
     DATABASES: Dict[str, Database] = {}
     REDIS: Optional[RedisDsn] = None
     REDIS_POOL_SIZE: int = 10
-    TEMPLATES_DIR: Optional[str] = None
+    TEMPLATES_DIR: List[str] = Field(default_factory=list)
     TEMPLATES_PACKAGE_NAME: Optional[str] = None
     DEV_MODE: bool = False
     SECURITY: Optional[SecuritySettings] = None
@@ -87,6 +88,20 @@ class Settings(BaseSettings):
     USER_MANAGER_CLASS = "services.user.managers.UserManager"
 
     APPS: List[str] = []
+
+    # web
+    STATIC_URL: str = ""
+    STATICFILES_DIRS: Dict[str, Any] = {
+        "public": {"uripath": "", "localdir": "public/"},
+    }
+
+    VITE_STATIC_URL_PATH: str = "/static/assets"
+    VITE_STATIC_DIR: str = "templates/static/src/assets"
+    VITE_OUTPUT_DIR: str = "dist/vite"
+    VITE_DEV_SERVER: str = "http://localhost:3000"
+    VITE_DEV_MODE: bool = False
+    VITE_REACT_MODE: bool = False
+    VITE_BASE: str = "static"
 
     # logs
     LOGLEVEL: str = "INFO"
@@ -142,3 +157,11 @@ class TokenCreds(BaseModel):
 
     class Config:
         extra = "forbid"
+
+
+class HtmlData(BaseModel):
+    # navbar: List[MenuOption]
+    ctx: Dict[str, Any]
+    title: str
+    content: Dict[str, Any]
+    meta: Optional[Dict[str, str]] = None

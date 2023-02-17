@@ -5,6 +5,7 @@ import os
 import re
 import subprocess
 import unicodedata
+from enum import Enum
 from importlib import import_module
 from pathlib import Path
 
@@ -162,7 +163,7 @@ def get_class(fullclass_path):
     return cls
 
 
-def init_blueprints(app, blueprints_allowed, package_dir="services.web"):
+def init_blueprints_legacy(app, blueprints_allowed, package_dir="services.web"):
     """
     It will import bluprints from modules that ends with "_bp" and belongs
     to the package declared in `package_dir`
@@ -184,3 +185,21 @@ def init_blueprints(app, blueprints_allowed, package_dir="services.web"):
 def get_meta_from_app(app_name) -> MetaData:
     Base = get_class(f"{app_name}.db.Base")
     return Base.metadata
+
+
+class MimeTypes(Enum):
+    """common mime types used
+    https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+    """
+
+    html = "text/html"
+    javascript = "text/javascript"
+    json = "application/json"
+    gz = "application/gzip"
+    jpg = "image/jpeg"
+    bz2 = "application/x-bzip2"
+    css = "text/css"
+    csv = "text/csv"
+    doc = "application/msword"
+    docx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+    gif = "image/gif"

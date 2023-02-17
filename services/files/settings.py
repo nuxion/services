@@ -31,3 +31,8 @@ APPS = [
     "services.security.web.WebApp",
     "{{ data.app_name }}.web.WebApp",
 ]
+
+
+TEMPLATES_DIR = [
+    "{{ data.app_name }}/pages"
+]

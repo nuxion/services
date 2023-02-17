@@ -6,7 +6,7 @@ from services.security import protected
 from services.types import JWTResponse, UserLogin
 from services.users import get_users_mg
 
-users_bp = Blueprint("users_api", url_prefix="users", version="v1")
+users_bp = Blueprint("users", url_prefix="users", version="v1")
 
 
 @users_bp.post("/login")

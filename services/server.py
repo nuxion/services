@@ -8,6 +8,7 @@ from services import defaults
 from services.base import WebAppSpec
 from services.db.plugin import init_db
 from services.redis_conn import create_pool
+from services.templates import Render
 from services.types import Settings
 from services.utils import get_class, get_version
 
@@ -44,6 +45,7 @@ def create_srv(
 
     app = Sanic(app_name)
 
+
     app.config.CORS_ORIGINS = settings.CORS_ORIGINS
     app.config.OAS_UI_DEFAULT = "swagger"
     app.config.OAS_UI_REDOC = False
@@ -69,6 +71,10 @@ def create_srv(
         # secure_app: WebAppSpec = get_class("services.security.web.WebApp")()
         # secure_app.init(app, settings)
 
+    render: Render = Render(searchpath=settings.TEMPLATES_DIR)
+    render.init_app(app)
+    render.add_static(app, settings)
+
     app.ctx.databases = {}
     if settings.DATABASES:
         init_db_func(app, settings)
@@ -76,6 +82,9 @@ def create_srv(
     for wapp in settings.APPS:
         w: WebAppSpec = get_class(wapp)()
         w.init(app, settings)
+
+    # for _, v in settings.STATICFILES_DIRS.items():
+    #   app.static(v["uripath"], v["localdir"])
 
     if with_status_handler:
         app.add_route(status_handler, "/status")

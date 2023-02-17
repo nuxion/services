@@ -5,6 +5,5 @@ from sanic.response import json
 
 
 @{{ data.app_name }}_bp.get("/")
-# @openapi.response(200, {"application/json": JWTResponse})
-async def default_handler(request: Request):
-    return json(dict(msg="hello wolrd!"), 200)
+async def json_handler(request: Request):
+    return json(dict(msg="hello wolrd! from app {{ data.app_name }}"), 200)

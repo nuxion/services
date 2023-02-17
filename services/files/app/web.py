@@ -1,14 +1,25 @@
 from sanic import Sanic
-from services.base import WebAppSpec
+from services.base import ViewSet, WebAppSpec
 from services.security import get_app_auth
 from services.types import Settings
+
 {% if data.init %}
 from services.users import UserManager
 
+api = ViewSet(
+        blueprints=["users", "{{ data.app_name }}"],
+        package="{{ data.app_name }}.api"
+)
+
+web = ViewSet(
+    blueprints=["webview"],
+    package="{{ data.app_name }}.pages"
+)
+
+
 class WebApp(WebAppSpec):
     name = "{{ data.app_name }}"
-    bp_modules = ["views_bp", "users_bp"]
-    package_dir = "{{ data.app_name }}"
+    views = [api, web]
 
     def hook_users(self, app: Sanic):
         """
@@ -34,8 +45,13 @@ class WebApp(WebAppSpec):
 
 class WebApp(WebAppSpec):
     name = "{{ data.app_name }}"
-    bp_modules = ["views"]
-    package_dir = "{{ data.app_name }}"
+    views = [
+        ViewSet(
+        blueprints=["default"],
+        package="{{ data.app_name }}.api"
+    ),
+    ]
+
 
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """

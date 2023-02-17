@@ -12,7 +12,7 @@ def get_package_dir(pkg):
 
 def render(filename, templates_dir=None, *args, **kwargs):
     path = (
-        f"{get_package_dir('services')}/templates"
+        f"{get_package_dir('services')}/files"
         if templates_dir is None
         else templates_dir
     )
