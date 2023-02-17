@@ -10,7 +10,7 @@ from pathlib import Path
 
 from sqlalchemy.sql.schema import MetaData
 
-from services import defaults
+from services import __about__, defaults
 from services.errors import CommandExecutionException
 
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
@@ -35,13 +35,13 @@ def read(rel_path):
         return fp.read()
 
 
-def get_version(rel_path="__version__.py"):
-    for line in read(rel_path).splitlines():
-        if line.startswith("__version__"):
-            delim = '"' if '"' in line else "'"
-            return line.split(delim)[1]
-    else:
-        raise RuntimeError("Unable to find version string.")
+def get_version(rel_path=None):
+    # if rel_path:
+    #     for line in read(rel_path).splitlines():
+    #         if line.startswith("__version__"):
+    #             delim = '"' if '"' in line else "'"
+    #             return line.split(delim)[1]
+    return __about__.__version__
 
 
 def get_query_param(request, key, default_val=None):
@@ -68,7 +68,6 @@ def execute_cmd(cmd) -> str:
     with subprocess.Popen(
         cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as p:
-
         out, err = p.communicate()
         if err:
             raise CommandExecutionException(err.decode())

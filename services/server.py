@@ -11,7 +11,7 @@ from services.redis_conn import create_pool
 from services.types import Settings
 from services.utils import get_class, get_version
 
-version = get_version("__version__.py")
+version = get_version()
 
 
 async def status_handler(request):
@@ -66,8 +66,8 @@ def create_srv(
             bearer_format="JWT",
         )
         app.ext.openapi.secured("token")
-        secure_app: WebAppSpec = get_class("services.security.web.WebApp")()
-        secure_app.init(app, settings)
+        # secure_app: WebAppSpec = get_class("services.security.web.WebApp")()
+        # secure_app.init(app, settings)
 
     app.ctx.databases = {}
     if settings.DATABASES:

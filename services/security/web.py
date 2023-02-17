@@ -5,7 +5,6 @@ from typing import List, Optional
 from sanic import Request, Sanic, json
 from services.base import WebAppSpec
 from services.security.authentication import auth_from_settings
-from services.security.redis_tokens import RedisTokenStore
 from services.types import Settings
 
 from .base import AuthSpec
@@ -70,6 +69,7 @@ class WebApp(WebAppSpec):
     def init(self, app: Sanic, settings: Settings):
         store = None
         if settings.SECURITY.AUTH_ALLOW_REFRESH:
+            from services.security.redis_tokens import RedisTokenStore
             try:
                 store = RedisTokenStore(app.ctx.web_redis)
             except AttributeError:
