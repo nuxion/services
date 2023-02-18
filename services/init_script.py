@@ -56,7 +56,7 @@ def create_default(root, default_app, vite_enabled):
     It will creates all the neccesary for a project to start
     """
 
-    data = {"app_name": default_app, "vite_enabled": vite_enabled }
+    data = {"app_name": default_app, "vite_enabled": vite_enabled}
     for f in FOLDERS:
         mkdir_p(f)
 
@@ -65,7 +65,7 @@ def create_default(root, default_app, vite_enabled):
         template="settings.py", dst=f"{root}/server_conf/settings.py", data=data
     )
     render_to_file(template="app/alembic.ini", dst=f"{root}/alembic.ini")
-    create_app(root, default_app, init=True)
+    create_app(root, default_app, init=True, vite_enabled=vite_enabled)
 
     final_words(default_app)
 
@@ -97,7 +97,6 @@ def alembic_files(root, app_name):
 def create_app(root, app_name, init=False, vite_enabled=False):
     dst = f"{root}/{app_name}"
     mkdir_p(f"{dst}/api")
-    mkdir_p(f"{dst}/pages")
     mkdir_p(f"{dst}/templates")
 
     data = {"app_name": app_name, "init": init}
@@ -109,9 +108,9 @@ def create_app(root, app_name, init=False, vite_enabled=False):
     render_to_file(template="app/models.py", dst=f"{dst}/models.py", data=data)
     render_to_file(template="app/db.py", dst=f"{dst}/db.py", data=data)
     shutil.copy(
-            f"{get_package_dir('services')}/files/index.html",
-            f"{root}/{app_name}/templates/index.html",
-        )
+        f"{get_package_dir('services')}/files/index.html",
+        f"{root}/{app_name}/templates/index.html",
+    )
     if vite_enabled:
         shutil.copy(
             f"{get_package_dir('services')}/files/_layout.vite.html",
@@ -122,7 +121,6 @@ def create_app(root, app_name, init=False, vite_enabled=False):
             f"{get_package_dir('services')}/files/_layout.default.html",
             f"{root}/{app_name}/templates/_layout.html",
         )
-        
 
     if init:
         render_to_file(template="app/users_bp.py", dst=f"{dst}/api/users.py", data=data)

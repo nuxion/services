@@ -159,6 +159,7 @@ class Settings(BaseSettings):
     STATIC_URL: str = ""
     STATICFILES_DIRS: Dict[str, Any] = {
         "public": {"uripath": "", "localdir": "front/public/"},
+        # "assets": {"uripath": "assets", "localdir": "front/dist/assets"},
         # "assetstest": {"uripath": "front/assets", "localdir": "front/src/assets"},
     }
 

@@ -21,6 +21,7 @@ good established libraries and technologies.
 - OpenApi/Swagger docs generation (Sanic)
 - Simple user system and authentication endpoints
 - JWT support
+- Vite support
 
 
 ## Quickstart

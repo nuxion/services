@@ -45,7 +45,6 @@ def create_srv(
 
     app = Sanic(app_name)
 
-
     app.config.CORS_ORIGINS = settings.CORS_ORIGINS
     app.config.OAS_UI_DEFAULT = "swagger"
     app.config.OAS_UI_REDOC = False
@@ -71,6 +70,9 @@ def create_srv(
         # secure_app: WebAppSpec = get_class("services.security.web.WebApp")()
         # secure_app.init(app, settings)
 
+    for name, v in settings.STATICFILES_DIRS.items():
+        app.static(v["uripath"], v["localdir"], name=name)
+
     render: Render = Render(searchpath=settings.TEMPLATES_DIR)
     render.init_app(app)
     render.add_static(app, settings)
@@ -85,11 +87,9 @@ def create_srv(
         w: WebAppSpec = get_class(wapp)()
         w.init(app, settings)
 
-    for _, v in settings.STATICFILES_DIRS.items():
-      app.static(v["uripath"], v["localdir"])
 
     if with_status_handler:
-        app.add_route(status_handler, "/status")
+        app.add_route(status_handler, "/status", name="status")
 
     return app
 

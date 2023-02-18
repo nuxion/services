@@ -93,8 +93,10 @@ class Render:
 
         if conf.VITE_DEV_MODE:
             static_dir = f"{settings.BASE_PATH}/{conf.VITE_STATIC_DIR}"
-            app.static(conf.VITE_STATIC_URL_PATH, static_dir)
+            app.static(conf.VITE_STATIC_URL_PATH, static_dir, name="vite_dev")
         else:
+            static_dir = f"{settings.BASE_PATH}/{conf.VITE_OUTPUT_DIR}{conf.VITE_STATIC_URL_PATH}"
+            app.static(conf.VITE_STATIC_URL_PATH, static_dir, name="vite_manifest")
             manifest_json = open_json(
                 f"{settings.BASE_PATH}/{conf.VITE_OUTPUT_DIR}/manifest.json"
             )
