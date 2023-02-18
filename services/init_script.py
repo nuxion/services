@@ -50,13 +50,13 @@ def final_words(project_name):
     console.print("\t[bold] srv web -L[/]\n")
 
 
-def create_default(root, default_app):
+def create_default(root, default_app, vite_enabled):
     """
     Entrypoint when calling `srv startproject .`
     It will creates all the neccesary for a project to start
     """
 
-    data = {"app_name": default_app}
+    data = {"app_name": default_app, "vite_enabled": vite_enabled }
     for f in FOLDERS:
         mkdir_p(f)
 
@@ -94,23 +94,35 @@ def alembic_files(root, app_name):
         )
 
 
-def create_app(root, app_name, init=False):
+def create_app(root, app_name, init=False, vite_enabled=False):
     dst = f"{root}/{app_name}"
     mkdir_p(f"{dst}/api")
     mkdir_p(f"{dst}/pages")
+    mkdir_p(f"{dst}/templates")
 
     data = {"app_name": app_name, "init": init}
     # creates and generates app's package files
     _empty_file(f"{dst}/__init__.py")
     render_to_file(template="app/web.py", dst=f"{dst}/web.py", data=data)
     render_to_file(template="app/api_bp.py", dst=f"{dst}/api/{app_name}.py", data=data)
-    render_to_file(template="app/webview_bp.py", dst=f"{dst}/pages/webview.py", data=data)
+    render_to_file(template="app/views.py", dst=f"{dst}/views.py", data=data)
     render_to_file(template="app/models.py", dst=f"{dst}/models.py", data=data)
     render_to_file(template="app/db.py", dst=f"{dst}/db.py", data=data)
     shutil.copy(
-        f"{get_package_dir('services')}/files/index.html",
-        f"{root}/{app_name}/pages/index.html",
-    )
+            f"{get_package_dir('services')}/files/index.html",
+            f"{root}/{app_name}/templates/index.html",
+        )
+    if vite_enabled:
+        shutil.copy(
+            f"{get_package_dir('services')}/files/_layout.vite.html",
+            f"{root}/{app_name}/templates/_layout.html",
+        )
+    else:
+        shutil.copy(
+            f"{get_package_dir('services')}/files/_layout.default.html",
+            f"{root}/{app_name}/templates/_layout.html",
+        )
+        
 
     if init:
         render_to_file(template="app/users_bp.py", dst=f"{dst}/api/users.py", data=data)

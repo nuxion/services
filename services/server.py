@@ -74,6 +74,8 @@ def create_srv(
     render: Render = Render(searchpath=settings.TEMPLATES_DIR)
     render.init_app(app)
     render.add_static(app, settings)
+    if settings.VITE_ENABLED:
+        render.add_vite(app, settings)
 
     app.ctx.databases = {}
     if settings.DATABASES:
@@ -83,8 +85,8 @@ def create_srv(
         w: WebAppSpec = get_class(wapp)()
         w.init(app, settings)
 
-    # for _, v in settings.STATICFILES_DIRS.items():
-    #   app.static(v["uripath"], v["localdir"])
+    for _, v in settings.STATICFILES_DIRS.items():
+      app.static(v["uripath"], v["localdir"])
 
     if with_status_handler:
         app.add_route(status_handler, "/status")

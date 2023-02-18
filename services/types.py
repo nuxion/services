@@ -70,6 +70,72 @@ class SecuritySettings(BaseSettings):
         env_prefix = "SRV_"
 
 
+class ViteConfig(BaseModel):
+    """
+    Vite configuration to be integrated into the backend.
+    See: https://vitejs.dev/guide/backend-integration.html
+
+    as an example, a base configuration in the front could be:
+
+    .. code-block:: javascript
+
+        export default defineConfig({
+            root: resolve('./src'),
+            base: '/',
+            plugins: [svelte()],
+            build: {
+                manifest: true,
+                outDir: resolve('./dist/vite'),
+                emptyOutDir: true,
+                target: 'es2015',
+                rollupOptions: {
+                input: {
+                    main: resolve('./src/main.js'),
+                        // explore: resolve('./theme/static/src/explore/main.js'),
+
+                }
+                }
+            }
+            })
+
+
+
+    where the the python app is in: `test_app/test_app`
+    and the frontend is in `test_app/front`
+    With that in mind then:
+
+    :param VITE_STATIC_URL_PATH: Where dynamic assets in vite are configurated.
+    :param VITE_STATIC_DIR: Local path from the python app where the vite
+        dynamic assets lives, in our example: "front/src/assets"
+    :param VITE_OUTPUT_DIR: Where Vite generates the build,
+        in our case: "front/dist/"
+    :param VITE_DEV_SERVER: Where vite dev server is listening.
+        By default it listen on "http://localhost:5173"
+    :param VITE_DEV_MODE: if dev mode is true, the it will render the hmr script tag
+    :param VITE_REACT_MODE: Enable if you are developing with REACT
+    :param VITE_BASE: Base url in the vite server. Is  the same as
+        https://vitejs.dev/config/server-options.html#server-base
+        by default: "/"
+
+    """
+
+    # Where dynamic assets in vite are configurated
+    VITE_STATIC_URL_PATH: str = "assets"
+    # Local path from the python app where the vite dynamic assets are
+    VITE_STATIC_DIR: str = "front/src/assets"
+    # where vite put the buil
+    VITE_OUTPUT_DIR: str = "fron/dist"
+    # where vite dev server is listening
+    VITE_DEV_SERVER: str = "http://localhost:5173"
+    # if dev mode is true, the it will render the hmr script tag
+    VITE_DEV_MODE: bool = True
+    # special case for react
+    VITE_REACT_MODE: bool = False
+    # base url in the vite server the same as
+    #    https://vitejs.dev/config/server-options.html#server-base
+    VITE_BASE: str = "/"
+
+
 class Settings(BaseSettings):
     BASE_PATH: Union[str, Path]
     HOST: str = "localhost"
@@ -92,17 +158,12 @@ class Settings(BaseSettings):
     # web
     STATIC_URL: str = ""
     STATICFILES_DIRS: Dict[str, Any] = {
-        "public": {"uripath": "", "localdir": "public/"},
+        "public": {"uripath": "", "localdir": "front/public/"},
+        # "assetstest": {"uripath": "front/assets", "localdir": "front/src/assets"},
     }
 
-    VITE_STATIC_URL_PATH: str = "/static/assets"
-    VITE_STATIC_DIR: str = "templates/static/src/assets"
-    VITE_OUTPUT_DIR: str = "dist/vite"
-    VITE_DEV_SERVER: str = "http://localhost:3000"
-    VITE_DEV_MODE: bool = False
-    VITE_REACT_MODE: bool = False
-    VITE_BASE: str = "static"
-
+    VITE_ENABLED: bool = False
+    VITE_CONFIG: ViteConfig = ViteConfig()
     # logs
     LOGLEVEL: str = "INFO"
     LOGCONFIG: Dict[str, Any] = {}

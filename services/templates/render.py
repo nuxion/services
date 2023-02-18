@@ -2,12 +2,12 @@
 # pylint: disable=line-too-long
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
-from services.types import Settings
-from services.utils import open_json
 from jinja2 import (Environment, FileSystemLoader, PackageLoader, Template,
                     select_autoescape)
 from jinja2.ext import Extension
 from sanic import Sanic
+from services.types import Settings
+from services.utils import open_json
 
 from .static import Static
 from .vite import ViteAsset, ViteDev
@@ -81,20 +81,24 @@ class Render:
         self.env.staticfiles = settings.STATICFILES_DIRS
 
     def add_vite(self, app: Sanic, settings: Settings):
-        manifest_json = open_json(
-            f"{settings.BASE_PATH}/{settings.VITE_OUTPUT_DIR}/manifest.json"
-        )
-        dev_server = f"{settings.VITE_DEV_SERVER}/{settings.VITE_BASE}"
+        conf = settings.VITE_CONFIG
+        dev_server = f"{conf.VITE_DEV_SERVER}"
+        if conf.VITE_BASE != "/":
+            dev_server = f"{conf.VITE_DEV_SERVER}{conf.VITE_BASE}"
         self.add_extension(ViteDev)
         self.add_extension(ViteAsset)
         self.env.vite_dev_server = dev_server
-        self.env.vite_dev_mode = settings.VITE_DEV_MODE
-        self.env.vite_react_mode = settings.VITE_REACT_MODE
-        self.env.vite_manifest = manifest_json
+        self.env.vite_dev_mode = conf.VITE_DEV_MODE
+        self.env.vite_react_mode = conf.VITE_REACT_MODE
 
-        if settings.VITE_DEV_MODE:
-            static_dir = f"{settings.BASE_PATH}/{settings.VITE_STATIC_DIR}"
-            app.static(settings.VITE_STATIC_URL_PATH, static_dir)
+        if conf.VITE_DEV_MODE:
+            static_dir = f"{settings.BASE_PATH}/{conf.VITE_STATIC_DIR}"
+            app.static(conf.VITE_STATIC_URL_PATH, static_dir)
+        else:
+            manifest_json = open_json(
+                f"{settings.BASE_PATH}/{conf.VITE_OUTPUT_DIR}/manifest.json"
+            )
+            self.env.vite_manifest = manifest_json
 
     def init_app(self, app: Sanic):
         """

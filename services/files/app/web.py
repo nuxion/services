@@ -12,8 +12,8 @@ api = ViewSet(
 )
 
 web = ViewSet(
-    blueprints=["webview"],
-    package="{{ data.app_name }}.pages"
+    blueprints=["views"],
+    package="{{ data.app_name }}"
 )
 
 
@@ -43,14 +43,14 @@ class WebApp(WebAppSpec):
         self.init_blueprints(app)
 {% else %}
 
+api = ViewSet(
+        blueprints=["{{ data.app_name }}"],
+        package="{{ data.app_name }}.api"
+)
+
 class WebApp(WebAppSpec):
     name = "{{ data.app_name }}"
-    views = [
-        ViewSet(
-        blueprints=["default"],
-        package="{{ data.app_name }}.api"
-    ),
-    ]
+    views = [api]
 
 
     def init(self, app: Sanic, settings: Settings):

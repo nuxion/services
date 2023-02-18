@@ -10,9 +10,12 @@ console = Console()
 
 
 @click.command()
+@click.option(
+    "--vite-enabled", "-V", default=False, is_flag=True, help="Get support for Vite"
+)
 @click.argument("base_path")
-def create_service_project(base_path):
-    """ Start a new project """
+def create_service_project(base_path, vite_enabled):
+    """Start a new project"""
     root = Path(base_path).resolve()
 
     p = Panel.fit(
@@ -23,4 +26,4 @@ def create_service_project(base_path):
     console.print(p)
 
     default_app = init_script.ask_webapp_name()
-    init_script.create_default(root, default_app)
+    init_script.create_default(root, default_app, vite_enabled)

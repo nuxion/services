@@ -32,7 +32,29 @@ APPS = [
     "{{ data.app_name }}.web.WebApp",
 ]
 
+{% if data.vite_enabled %}
+
+VITE_ENABLED = True
+VITE_CONFIG = types.ViteConfig(
+    # Where dynamic assets in vite are configurated
+    VITE_STATIC_URL_PATH="assets",
+    # Local path from the python app where the vite dynamic assets are
+    VITE_STATIC_DIR="front/src/assets",
+    # where vite put the buil
+    VITE_OUTPUT_DIR="front/dist",
+    # where vite dev server is listening
+    VITE_DEV_SERVER="http://localhost:5173",
+    # if dev mode is true, the it will render the hmr script tag
+    VITE_DEV_MODE=True,
+    # special case for react
+    VITE_REACT_MODE=False,
+    # base url in the vite server the same as
+    #    https://vitejs.dev/config/server-options.html#server-base
+    VITE_BASE="/"
+)
+
+{% endif %}
 
 TEMPLATES_DIR = [
-    "{{ data.app_name }}/pages"
+    "{{ data.app_name }}/templates"
 ]
