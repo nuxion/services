@@ -1,6 +1,6 @@
 from typing import Any, Dict
 
-{% if data.init %}
+{% if data.users %}
 from services.users.models import UserMixin
 {% endif %}
 from sqlalchemy import BigInteger, Column, String
@@ -8,7 +8,7 @@ from sqlalchemy import BigInteger, Column, String
 from .db import Base
 
 
-{% if data.init %}
+{% if data.users %}
 class UserModel(UserMixin, Base):
     __tablename__ = "{{ data.app_name }}_user"
     __mapper_args__ = {"eager_defaults": True}

@@ -3,17 +3,17 @@ from services.base import ViewSet, WebAppSpec
 from services.security import get_app_auth
 from services.types import Settings
 
-{% if data.init %}
+web = ViewSet(
+    blueprints=["views"],
+    package="{{ data.app_name }}"
+)
+
+{% if data.users %}
 from services.users import UserManager
 
 api = ViewSet(
         blueprints=["users", "{{ data.app_name }}"],
         package="{{ data.app_name }}.api"
-)
-
-web = ViewSet(
-    blueprints=["views"],
-    package="{{ data.app_name }}"
 )
 
 
@@ -50,11 +50,11 @@ api = ViewSet(
 
 class WebApp(WebAppSpec):
     name = "{{ data.app_name }}"
-    views = [api]
+    views = [api, web]
 
 
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
-        pass
+        self.init_blueprints(app)
 
 {% endif %}

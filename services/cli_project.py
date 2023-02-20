@@ -10,20 +10,23 @@ console = Console()
 
 
 @click.command()
+@click.option("--vite", default=False, is_flag=True, help="Get support for Vite")
+@click.option("--users", default=False, is_flag=True, help="Provide the user system")
 @click.option(
-    "--vite-enabled", "-V", default=False, is_flag=True, help="Get support for Vite"
+    "--name",
+    default=None,
+    help="Name of the project, if empty it will ask you for a name",
 )
 @click.argument("base_path")
-def create_service_project(base_path, vite_enabled):
+def create_service_project(base_path, name, vite, users):
     """Start a new project"""
     root = Path(base_path).resolve()
-
-    p = Panel.fit(
-        "[bold magenta]:smile_cat: Hello and welcome to "
-        " AI services [/bold magenta]",
-        border_style="red",
+    opts = init_script.ScriptOpts(
+        base_path=root,
+        app_name=name,
+        users=users,
+        vite_enabled=vite,
     )
-    console.print(p)
+    print(opts)
 
-    default_app = init_script.ask_webapp_name()
-    init_script.create_default(root, default_app, vite_enabled)
+    init_script.create_project(opts)

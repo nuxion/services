@@ -1,5 +1,4 @@
 import sys
-
 from services import defaults, types
 
 # WARNING:
@@ -53,6 +52,13 @@ VITE_CONFIG = types.ViteConfig(
     VITE_BASE="/"
 )
 
+STATICFILES_DIRS = [
+        types.StaticDir(
+            name="public",
+            uripath="",
+            localdir="front/public/"
+        )
+]
 {% endif %}
 
 TEMPLATES_DIR = [

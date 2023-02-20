@@ -70,8 +70,8 @@ def create_srv(
         # secure_app: WebAppSpec = get_class("services.security.web.WebApp")()
         # secure_app.init(app, settings)
 
-    for name, v in settings.STATICFILES_DIRS.items():
-        app.static(v["uripath"], v["localdir"], name=name)
+    for sd in settings.STATICFILES_DIRS:
+        app.static(sd.uripath, sd.localdir, name=sd.name)
 
     render: Render = Render(searchpath=settings.TEMPLATES_DIR)
     render.init_app(app)
@@ -86,7 +86,6 @@ def create_srv(
     for wapp in settings.APPS:
         w: WebAppSpec = get_class(wapp)()
         w.init(app, settings)
-
 
     if with_status_handler:
         app.add_route(status_handler, "/status", name="status")

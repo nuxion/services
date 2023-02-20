@@ -7,6 +7,12 @@ from pydantic import BaseModel, BaseSettings, Field, RedisDsn
 from services import defaults
 
 
+class StaticDir(BaseModel):
+    name: str
+    uripath: str
+    localdir: str
+
+
 class Database(BaseModel):
     """
     Database configuration object to be used with
@@ -157,12 +163,7 @@ class Settings(BaseSettings):
 
     # web
     STATIC_URL: str = ""
-    STATICFILES_DIRS: Dict[str, Any] = {
-        "public": {"uripath": "", "localdir": "front/public/"},
-        # "assets": {"uripath": "assets", "localdir": "front/dist/assets"},
-        # "assetstest": {"uripath": "front/assets", "localdir": "front/src/assets"},
-    }
-
+    STATICFILES_DIRS: List[StaticDir] = Field(default_factory=list)
     VITE_ENABLED: bool = False
     VITE_CONFIG: ViteConfig = ViteConfig()
     # logs
