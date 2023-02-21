@@ -50,6 +50,12 @@ create-srv-project = "services.cli_project:create_service_project"
 [tool.hatch.version]
 path = "services/__about__.py"
 
+[tool.hatch.build]
+artifacts = [
+  "*.ini",
+  "*.html",
+]
+
 [tool.hatch.envs.default]
 dependencies = [
   "pytest",
