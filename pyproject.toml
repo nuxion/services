@@ -54,6 +54,7 @@ path = "services/__about__.py"
 artifacts = [
   "*.ini",
   "*.html",
+  "*.mako",
 ]
 
 [tool.hatch.envs.default]

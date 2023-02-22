@@ -56,6 +56,7 @@ def webcli(host, port, workers, auto_reload, access_log, debug, dev, settings_mo
     loader = AppLoader(factory=partial(create_srv, settings))
     srv = loader.load()
     srv.prepare(
+        host=host,
         port=int(port),
         dev=dev,
         auto_reload=auto_reload if not debug else False,
