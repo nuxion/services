@@ -62,15 +62,15 @@ dependencies = [
   "pytest",
   "pytest-asyncio",
   "pytest-cov",
-  "pylint",
-  "isort",
-  "autopep8",
+  "pylint~=2.16.2",
+  "isort~=5.12.0",
+  "black~=23.1.0",
   "sqlalchemy-stubs",
   "ipython",
   "Sphinx~=5.3.0",
   "sphinx-autobuild",
   "sphinx-rtd-theme",
-  "aiosqlite~=0.18.0"
+  "aiosqlite~=0.18.0",
 ]
 [tool.hatch.envs.default.scripts]
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=services --cov=tests {args}"
@@ -92,3 +92,9 @@ exclude_lines = [
   "if __name__ == .__main__.:",
   "if TYPE_CHECKING:",
 ]
+# Custom added
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 88
