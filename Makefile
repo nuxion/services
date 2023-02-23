@@ -37,6 +37,9 @@ clean:
 lint:
 	pylint --disable=R,C,W services --ignore-paths=services/files
 
+check:
+	mypy -p services --exclude services.files
+
 black:
 	black services tests
 
