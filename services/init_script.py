@@ -132,7 +132,7 @@ def create_app(opts: ScriptOpts):
     else:
         shutil.copy(
             f"{get_package_dir('services')}/files/_layout.default.html",
-            f"{opts.root}/{opts.app_name}/templates/_layout.html",
+            f"{opts.base_path}/{opts.app_name}/templates/_layout.html",
         )
 
     if opts.users:
