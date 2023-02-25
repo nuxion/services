@@ -18,6 +18,18 @@ class WebAuthFailed(SanicJWTException):
         super().__init__(message, **kwargs)
 
 
+class WebUnauthorized(SanicJWTException, SanicUnauthorized):
+    def __init__(self, message="Auth required.", **kwargs):
+        super().__init__(message, scheme="Bearer", **kwargs)
+
+
+class MissingAuthorizationHeader(SanicJWTException):
+    status_code = 400
+
+    def __init__(self, message="Authorization header not present.", **kwargs):
+        super().__init__(message, **kwargs)
+
+
 class CommandExecutionException(Exception):
     def __init__(self, message):
         super().__init__(message)
@@ -29,7 +41,6 @@ class BadConfigurationException(Exception):
 
 
 class UserNotFound(Exception):
-
     def __init__(self, username):
         super().__init__(f"{username} not found")
 

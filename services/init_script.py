@@ -7,13 +7,14 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
+
 from services.jt import render_to_file
-from services.utils import (get_package_dir, get_parent_folder, mkdir_p,
-                            normalize_name)
+from services.utils import get_package_dir, get_parent_folder, mkdir_p, normalize_name
 
 
 class ScriptOpts(BaseModel):
     base_path: Path
+    secret_key: str
     app_name: Optional[str] = None
     vite_enabled: bool = False
     users: bool = True
@@ -69,8 +70,12 @@ def final_words(opts: ScriptOpts):
     console.print("\t[bold] srv web -L[/]\n")
 
     if opts.vite_enabled:
-        console.print(" To start using Vite, you can init the svelte template, into the front folder: \n")
-        console.print("\t[bold]degit https://github.com/nuxion/services-front-svelte front[/]\n")
+        console.print(
+            " To start using Vite, you can init the svelte template, into the front folder: \n"
+        )
+        console.print(
+            "\t[bold]degit https://github.com/nuxion/services-front-svelte front[/]\n"
+        )
 
 
 def alembic_files(root, app_name):

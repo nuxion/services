@@ -2,7 +2,7 @@ from pathlib import Path
 
 import click
 from rich.console import Console
-from rich.panel import Panel
+from secrets import token_urlsafe
 
 from services import init_script
 
@@ -23,6 +23,7 @@ def create_service_project(base_path, name, vite, users):
     root = Path(base_path).resolve()
     opts = init_script.ScriptOpts(
         base_path=root,
+        secret_key=token_urlsafe(32),
         app_name=name,
         users=users,
         vite_enabled=vite,

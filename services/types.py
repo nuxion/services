@@ -1,3 +1,4 @@
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
@@ -64,7 +65,6 @@ class SecuritySettings(BaseSettings):
     JWT_ALG: str = "ES512"
     JWT_EXP: int = 30  # 30 minutes
     JWT_CLAIMS_REQUIRED: List[str] = ["exp"]
-    JWT_SECRET: Optional[str] = None
     JWT_ISS: Optional[str] = None
     JWT_AUD: Optional[str] = None
     REFRESH_TOKEN_TTL: int = 3600 * 168  # 7 days
@@ -142,6 +142,34 @@ class ViteConfig(BaseModel):
     VITE_BASE: str = "/"
 
 
+class KeyPairs(BaseModel):
+    public: str
+    private: str
+
+
+class JWTConfig(BaseModel):
+    alg: str
+    exp_min: int = 30
+    keys: Optional[KeyPairs] = None
+    secret: Optional[str] = None
+    issuer: Optional[str] = None
+    audience: Optional[str] = None
+    requires_claims: List[str] = ["exp"]
+    ttl_refresh_token: int = 3600 * 168  # 7 days
+
+    class Config:
+        extra = "forbid"
+
+
+class SecurityConfig(BaseModel):
+    secret_key: str = Field(default_factory=os.urandom(16).hex)
+    jwt: Optional[JWTConfig] = None
+    session: Optional[str] = None
+    token_store_uri: str = "sqlite+aiosqlite:///:memory:"
+    authenticators: List[str] = Field(default_factory=list)
+    ttl_refresh_token: int = 3600 * 168  # 7 days
+
+
 class Settings(BaseSettings):
     BASE_PATH: Union[str, Path]
     HOST: str = "localhost"
@@ -153,7 +181,9 @@ class Settings(BaseSettings):
     TEMPLATES_PACKAGE_NAME: Optional[str] = None
     DEV_MODE: bool = False
     SECURITY: Optional[SecuritySettings] = None
-    CUSTOM_COMMANDS: List[str] = []
+    SECURITY2: Optional[SecurityConfig] = None
+    AUTHENTICATORS: List[str] = Field(default_factory=list)
+    CUSTOM_COMMANDS: List[str] = Field(default_factory=list)
     USER_ENDPOINTS: bool = True
     USER_MODEL: Optional[str] = None
     USER_DB: str = "default"
@@ -180,25 +210,6 @@ class Settings(BaseSettings):
 
     class Config:
         env_prefix = "SRV_"
-
-
-class KeyPairs(BaseModel):
-    public: str
-    private: str
-
-
-class JWTConfig(BaseModel):
-    alg: str
-    exp_min: int = 30
-    keys: Optional[KeyPairs] = None
-    secret: Optional[str] = None
-    issuer: Optional[str] = None
-    audience: Optional[str] = None
-    requires_claims: List[str] = ["exp"]
-    ttl_refresh_token: int = 3600 * 168  # 7 days
-
-    class Config:
-        extra = "forbid"
 
 
 class UserLogin(BaseModel):
