@@ -17,8 +17,9 @@ async def login_handler(request: Request):
     manager = get_users_mg(request)
     try:
         creds = UserLogin(**request.json)
-        user = await manager.authenticate(username=creds.username,
-                                          password=creds.password)
+        user = await manager.authenticate(
+            username=creds.username, password=creds.password
+        )
     except AuthValidationFailed as exc:
         raise WebAuthFailed() from exc
 

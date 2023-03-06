@@ -8,12 +8,12 @@ from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
 from services.jt import render_to_file
-from services.utils import (get_package_dir, get_parent_folder, mkdir_p,
-                            normalize_name)
+from services.utils import get_package_dir, get_parent_folder, mkdir_p, normalize_name
 
 
 class ScriptOpts(BaseModel):
     base_path: Path
+    secret_key: str
     app_name: Optional[str] = None
     vite_enabled: bool = False
     users: bool = True
@@ -69,8 +69,12 @@ def final_words(opts: ScriptOpts):
     console.print("\t[bold] srv web -L[/]\n")
 
     if opts.vite_enabled:
-        console.print(" To start using Vite, you can init the svelte template, into the front folder: \n")
-        console.print("\t[bold]degit https://github.com/nuxion/services-front-svelte front[/]\n")
+        console.print(
+            " To start using Vite, you can init the svelte template, into the front folder: \n"
+        )
+        console.print(
+            "\t[bold]degit https://github.com/nuxion/services-front-svelte front[/]\n"
+        )
 
 
 def alembic_files(root, app_name):
@@ -104,6 +108,7 @@ def create_app(opts: ScriptOpts):
     dst = f"{opts.base_path}/{opts.app_name}"
     mkdir_p(f"{dst}/api")
     mkdir_p(f"{dst}/templates")
+    mkdir_p(f"{dst}/commands")
 
     data = opts.dict()
     # creates and generates app's package files
@@ -127,13 +132,25 @@ def create_app(opts: ScriptOpts):
     else:
         shutil.copy(
             f"{get_package_dir('services')}/files/_layout.default.html",
-            f"{opts.root}/{opts.app_name}/templates/_layout.html",
+            f"{opts.base_path}/{opts.app_name}/templates/_layout.html",
         )
 
-    if opts.users:
-        render_to_file(template="app/users_bp.py", dst=f"{dst}/api/users.py", data=data)
-
     alembic_files(str(opts.base_path), opts.app_name)
+
+
+def users_feature(opts: ScriptOpts):
+    dst = f"{opts.base_path}/{opts.app_name}"
+    data = opts.dict()
+    render_to_file(template="app/users_bp.py", dst=f"{dst}/api/users.py", data=data)
+    render_to_file(template="app/users_bp2.py", dst=f"{dst}/api/users2.py", data=data)
+    render_to_file(
+        template="app/users_models.py", dst=f"{dst}/users_models.py", data=data
+    )
+
+    render_to_file(template="app/managers.py", dst=f"{dst}/managers.py", data=data)
+    render_to_file(
+        template="app/commands/users.py", dst=f"{dst}/commands/users.py", data=data
+    )
 
 
 def create_settings(opts: ScriptOpts):
@@ -143,6 +160,14 @@ def create_settings(opts: ScriptOpts):
         template="settings.py",
         dst=f"{opts.base_path}/server_conf/settings.py",
         data=opts.dict(),
+    )
+
+
+def add_command(name, opts: ScriptOpts):
+    dst = f"{opts.base_path}/{opts.app_name}"
+    data = opts.dict()
+    render_to_file(
+        template=f"app/commands/{name}.py", dst=f"{dst}/commands/{name}.py", data=data
     )
 
 
@@ -162,5 +187,8 @@ def create_project(opts: ScriptOpts):
     render_to_file(template="app/alembic.ini", dst=f"{opts.base_path}/alembic.ini")
 
     create_app(opts)
+    if opts.users:
+        users_feature(opts)
+    add_command("shell", opts)
 
     final_words(opts)

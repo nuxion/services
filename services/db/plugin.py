@@ -12,12 +12,10 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 
-class AsyncDBHelper:
-
+class DBHelper:
     async def listener_db(self, app: Sanic):
         for k, v in app.config.DATABASES.items():
-            _db = AsyncSQL(v,
-                           set_session_factory=True)
+            _db = AsyncSQL(v, set_session_factory=True)
             logger.info(f"Starting db {k}")
             await _db.init()
             app.ctx.databases[k] = _db
@@ -33,9 +31,13 @@ class AsyncDBHelper:
         db = self.get_db(request, name=name)
         return db.engine
 
+    async def dispose(self, request, *, name="default"):
+        db = self.get_db(request, name=name)
+        await db.dispose()
+
 
 def init_db(app: Sanic, settings: Settings):
     app.config.DATABASES = settings.DATABASES
-    db_helper = AsyncDBHelper()
+    db_helper = DBHelper()
     app.register_listener(db_helper.listener_db, "before_server_start")
     app.ext.dependency(db_helper)

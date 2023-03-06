@@ -1,9 +1,6 @@
-from sanic import HTTPResponse, Sanic
 from sanic.request import Request
-from sanic.response import html
 
 from services.templates import Render
-from services.utils import MimeTypes
 
 
 async def async_render(request: Request, tpl_name, data) -> str:

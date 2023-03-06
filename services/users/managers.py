@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Union
 from services.db.sqlhelper import AsyncSQL
 from services.errors import UserNotFound, AuthValidationFailed
 from services.security import AuthSpec, PasswordScript
-from services.types import JWTConfig, JWTResponse
+from services.types import JWTResponse
 from services.utils import get_class
 from sqlalchemy import delete, select
 from sqlalchemy.exc import IntegrityError
@@ -14,22 +14,22 @@ from .models import UserMixin
 
 
 class UserManager(UserManagerSpec):
-
-    def __init__(self, auth: AuthSpec,
-                 *,
-                 db: AsyncSQL,
-                 model_class: str,
-                 salt: Optional[str] = None):
+    def __init__(
+        self,
+        auth: AuthSpec,
+        *,
+        db: AsyncSQL,
+        model_class: str,
+        salt: Optional[str] = None,
+    ):
         self._model: UserMixin = get_class(model_class)
         self._salt = salt
         self.db = db
         self.auth = auth
 
-    def verify_password(self,
-                        original_password: bytes, *,
-                        to_verify: str,
-                        salt: Union[bytes, str]
-                        ) -> bool:
+    def verify_password(
+        self, original_password: bytes, *, to_verify: str, salt: Union[bytes, str]
+    ) -> bool:
         pm = PasswordScript(salt)
         verified = pm.verify(to_verify, original_password)
         if verified:
@@ -37,14 +37,11 @@ class UserManager(UserManagerSpec):
         return False
 
     def encrypt_password(self, password, salt: Union[bytes, str]) -> bytes:
-
         pm = PasswordScript(salt)
         encrypted = pm.encrypt(password)
         return encrypted
 
-    async def authenticate(self, username: str, *,
-                           password: str) -> UserSpec:
-
+    async def authenticate(self, username: str, *, password: str) -> UserSpec:
         async with self.db.session_factory() as session:
             user = await self._get(session, username)
             if user is None:
@@ -70,8 +67,7 @@ class UserManager(UserManagerSpec):
             updated_at=user.updated_at,
         )
 
-    def _user_or_raise(self, username,
-                       user_object: Union[UserMixin, None]) -> UserSpec:
+    def _user_or_raise(self, username, user_object: Union[UserMixin, None]) -> UserSpec:
         if not user_object:
             raise UserNotFound(username)
         return self._to_spec(user_object)
@@ -85,10 +81,7 @@ class UserManager(UserManagerSpec):
             return [self._to_spec(r[0]) for r in result]
 
     async def get(self, username: str) -> UserSpec:
-
-        stmt = select(self._model)\
-            .where(self._model.username == username)\
-            .limit(1)
+        stmt = select(self._model).where(self._model.username == username).limit(1)
 
         async with self.db.session_factory() as session:
             rsp = await session.execute(stmt)
@@ -97,16 +90,13 @@ class UserManager(UserManagerSpec):
         return self._user_or_raise(username, _user)
 
     async def _get(self, session, username: str) -> UserMixin:
-        stmt = select(self._model)\
-            .where(self._model.username == username)\
-            .limit(1)
+        stmt = select(self._model).where(self._model.username == username).limit(1)
 
         rsp = await session.execute(stmt)
 
         return rsp.scalar_one_or_none()
 
     async def register(self, data: Dict[str, Any]) -> Union[UserSpec, None]:
-
         data["password"] = self.encrypt_password(data["password"], self._salt)
 
         um = self._model(**data)
@@ -132,7 +122,6 @@ class UserManager(UserManagerSpec):
             session.add(u)
 
     async def delete(self, username: str):
-
         async with self.db.session_factory() as session:
             stmt = delete(self._model).where(self._model.username == username)
             await session.execute(stmt)
@@ -148,20 +137,15 @@ class UserManager(UserManagerSpec):
             session.add(u)
 
     async def generate_token(self, user: UserSpec, exp=None) -> JWTResponse:
-
-        payload = {
-            "usr": user.username, "scopes": user.scopes
-        }
+        payload = {"usr": user.username, "scopes": user.scopes}
         encoded = self.auth.encode(payload)
         rftkn = None
         if self.auth.store:
             rftkn = await self.auth.store_refresh_token(user.username)
-        return JWTResponse(
-            access_token=encoded,
-            refresh_token=rftkn
-        )
+        return JWTResponse(access_token=encoded, refresh_token=rftkn)
 
     async def refresh_token(self, old_token: JWTResponse) -> JWTResponse:
         new_jwt = await self.auth.refresh_token(
-            old_token.access_token, old_token.refresh_token)
+            old_token.access_token, old_token.refresh_token
+        )
         return new_jwt

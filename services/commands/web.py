@@ -25,7 +25,7 @@ from services import defaults
     default=defaults.SETTINGS_MODULE,
     help="Fullpath to settings module",
 )
-def webcli(host, port, workers, auto_reload, access_log, debug, dev, settings_module):
+def web_cli(host, port, workers, auto_reload, access_log, debug, dev, settings_module):
     """Run Web Server"""
     # pylint: disable=import-outside-toplevel
     from sanic import Sanic

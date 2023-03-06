@@ -27,9 +27,17 @@ DATABASES = {
 
 APPS = [
     # "services.users.web.WebApp",
-    "services.security.web.WebApp",
+    # "services.security.web.WebApp",
     "{{ data.app_name }}.web.WebApp",
 ]
+
+SECURITY2 = types.SecurityConfig(
+    secret_key="{{ data.secret_key }}",
+    jwt=types.JWTConfig(
+        alg="HS256",
+        secret="{{ data.secret_key }}"
+    )
+)
 
 {% if data.vite_enabled %}
 
