@@ -11,6 +11,7 @@ from services.redis_conn import create_pool
 from services.templates import Render
 from services.types import Settings
 from services.utils import get_class, get_version
+from services.security2.web import Authenticator
 
 version = get_version()
 
@@ -57,7 +58,7 @@ def create_srv(
     if settings.REDIS:
         app.ctx.redis = create_redis(settings.REDIS)
     if settings.DATABASES:
-        init_db(app, settings=settings)
+        init_db_func(app, settings=settings)
 
     if auth_enabled:
         app.ext.openapi.add_security_scheme(
@@ -69,6 +70,7 @@ def create_srv(
         app.ext.openapi.secured("token")
         # secure_app: WebAppSpec = get_class("services.security.web.WebApp")()
         # secure_app.init(app, settings)
+        Authenticator(app)
 
     for sd in settings.STATICFILES_DIRS:
         app.static(sd.uripath, sd.localdir, name=sd.name)
@@ -91,12 +93,3 @@ def create_srv(
         app.add_route(status_handler, "/status", name="status")
 
     return app
-
-
-def init_app(web_app_name: str, *, app: Sanic, settings: Settings):
-    w: WebAppSpec = get_class(web_app_name)()
-    w.init(app, settings)
-    if w.bp_modules:
-        w.init_blueprints(app)
-    if w.middlewares:
-        w.init_middlewares(app)

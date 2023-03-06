@@ -49,6 +49,7 @@ class Authenticator:
         bp.on_request(self.bp_middleware)
 
     def auth_error_handler(self, request, exception):
+        """TODO: move to WebSpec"""
         return json({"msg": "Authentication failed"}, status=401)
 
     def validate(

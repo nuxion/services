@@ -6,6 +6,7 @@ from pydantic import BaseModel
 from sanic import HTTPResponse, Request, Sanic
 
 from services.db.sqlhelper import AsyncSQL
+from services.security2 import Authenticator, IAuth
 from services.types import Settings
 
 
@@ -40,14 +41,17 @@ class WebAppSpec(ABC):
 
     name: str
     views: List[ViewSet]
-    bp_modules: List[str]
-    package_dir: str
-    # middlewares: List[Tuple[str, Callable]]
-    # dependencies: List[Callable]
+
+    def __init__(self):
+        self.auth: Authenticator = Authenticator()
 
     @abstractmethod
     def init(self, app: Sanic, settings: Settings):
         pass
+
+    def register_auth_validator(self, app: Sanic, name: str, auth: IAuth):
+        app.ext.dependency(auth)
+        self.auth.register_validator(name, auth)
 
     def init_blueprints(self, app: Sanic):
         for view in self.views:
