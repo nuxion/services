@@ -1,6 +1,8 @@
+from sqlalchemy import BigInteger, Column, DateTime
 from sqlalchemy.ext.compiler import compiles
-from sqlalchemy.orm import declarative_base
 from sqlalchemy.ext.mutable import Mutable
+from sqlalchemy.orm import declarative_base, declarative_mixin
+from sqlalchemy.sql import functions
 from sqlalchemy.types import BINARY, DECIMAL, JSON, BigInteger
 
 
@@ -55,6 +57,26 @@ def compile_integer_sqlite(type_, compiler, **kw):
 # @compiles(DECIMAL, "sqlite")
 # def compile_integer_sqlite(type_, compiler, **kw):
 #     return "Text"
+
+
+@declarative_mixin
+class CommonMixin:
+    __mapper_args__ = {"eager_defaults": True}
+    id = Column(BigInteger, primary_key=True)
+
+
+@declarative_mixin
+class TrackCreationMixin:
+    created_at = Column(
+        DateTime(),
+        server_default=functions.now(),
+        nullable=False,
+    )
+    updated_at = Column(
+        DateTime(),
+        server_default=functions.now(),
+        nullable=False,
+    )
 
 
 Base = declarative_base()
