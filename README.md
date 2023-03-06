@@ -93,21 +93,19 @@ Note: srv db uses alembic under the hood and Alembic is configurated in a way th
 
 ## Roadmap:
 
-- [ ] UserManager abstraction
-- [ ] Add groups 
+- [x] UserManager abstraction
+- [x] Add groups 
 - [ ] User Registration
-- [ ] User list defined by files?
-- [ ] Expand command for users administration
-- [ ] Custom commands hooks in `srv` 
+- [x] Expand command for users administration
+- [x] Custom commands hooks in `srv` 
 - [ ] Dev env files {Makefile, Dockerfile, docker-compose, etc}
 - [ ] Task Queue abstraction {Redis, Google Cloud Pub/Sub, etc}
 - [ ] File upload abstraction? (TBD)
 - [ ] OAuth 2.0 integration
 - [ ] documentation (guides and reference api)
-- [ ] Add `setup.py` by default?
 - [ ] Tools and abstraction for logging (stdout, google cloud log, etc)
 - [ ] Metrics (prometheus)
-- [ ] Update to Sanic 22.9
+- [x] Update to Sanic 22.9
 - [ ] Websockets examples
 
 ## FAQ
