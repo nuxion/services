@@ -181,7 +181,7 @@ class Settings(BaseSettings):
     TEMPLATES_PACKAGE_NAME: Optional[str] = None
     DEV_MODE: bool = False
     SECURITY: Optional[SecuritySettings] = None
-    SECURITY2: Optional[SecurityConfig] = None
+    SECURITY2: SecurityConfig = Field(default_factory=SecurityConfig)
     AUTHENTICATORS: List[str] = Field(default_factory=list)
     CUSTOM_COMMANDS: List[str] = Field(default_factory=list)
     USER_ENDPOINTS: bool = True

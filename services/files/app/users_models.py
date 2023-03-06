@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, Column, ForeignKey, String
 from sqlalchemy.orm import declarative_mixin, declared_attr, relationship
 from sqlalchemy.schema import Table
 
-from services.users.models import UserMixin
+from services.users2 import GroupMixin, UserMixin
 
 from .db import Base
 
@@ -15,14 +15,18 @@ user_group_table = Table(
         "user_id",
         BigInteger,
         ForeignKey(
-            "{{ data.app_name }}_user.id", onupdate="CASCADE", ondelete="CASCADE"
+            "{{ data.app_name }}_user.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
     ),
     Column(
         "group_id",
         BigInteger,
         ForeignKey(
-            "{{ data.app_name }}_group.id", onupdate="CASCADE", ondelete="CASCADE"
+            "{{ data.app_name }}_group.id",
+            onupdate="CASCADE",
+            ondelete="CASCADE",
         ),
     ),
 )
@@ -50,6 +54,12 @@ class UserModel(UserMixin, Base):
     __mapper_args__ = {"eager_defaults": True}
 
     fullname = Column(String(), nullable=True)
+    groups = relationship(
+        "GroupModel",
+        secondary=user_group_table,
+        back_populates="users",
+        lazy="selectin",
+    )
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -66,10 +76,13 @@ class UserModel(UserMixin, Base):
         }
 
 
-class GroupModel(Base):
+class GroupModel(GroupMixin, Base):
     __tablename__ = "{{ data.app_name }}_group"
-    id = Column(BigInteger, primary_key=True)
-    group_name = Column(String(16), unique=True, nullable=False)
-    users = relationship("UserModel", secondary=user_group_table, backref="groups")
+    users = relationship(
+        "UserModel",
+        secondary=user_group_table,
+        back_populates="groups",
+        lazy="selectin",
+    )
 
     __mapper_args__ = {"eager_defaults": True}
