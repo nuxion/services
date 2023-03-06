@@ -8,14 +8,6 @@ from services import defaults, types
 # stored in those machines.
 
 # General Folders for the server
-SECURITY = types.SecuritySettings(
-    JWT_SECRET="Changeme",
-    JWT_ALG="HS256",
-    AUTH_SALT="Changeme",
-)
-
-USER_MODEL = "{{ data.app_name }}.models.UserModel"
-
 DATABASES = {
     "default": types.Database(
         name="default",

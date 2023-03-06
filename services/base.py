@@ -6,7 +6,7 @@ from pydantic import BaseModel
 from sanic import HTTPResponse, Request, Sanic
 
 from services.db.sqlhelper import AsyncSQL
-from services.security2 import Authenticator, IAuth
+from services.security import Authenticator, IAuth
 from services.types import Settings
 
 

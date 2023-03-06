@@ -106,6 +106,7 @@ Note: srv db uses alembic under the hood and Alembic is configurated in a way th
 - [ ] Tools and abstraction for logging (stdout, google cloud log, etc)
 - [ ] Metrics (prometheus)
 - [x] Update to Sanic 22.9
+- [x] Update to SQLAlchemy 2.0
 - [ ] Websockets examples
 
 ## FAQ

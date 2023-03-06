@@ -1,12 +1,24 @@
-from abc import ABC, abstractmethod
-from typing import Any, Dict, List, Optional, Union
+from abc import ABCMeta, abstractmethod
+from secrets import token_urlsafe
+from typing import Generic, List, Optional, TypeVar, Union
 
-from sanic import Request
+from services import types
 
-from services.types import JWTResponse, JWTConfig
+StoreDriverT = TypeVar("StoreDriverT")
 
 
-class TokenStoreSpec(ABC):
+class ITokenStore(Generic[StoreDriverT], metaclass=ABCMeta):
+    def __init__(self, conf: types.SecurityConfig, driver: StoreDriverT):
+        self.conf = conf
+        self.driver = driver
+
+    @classmethod
+    @abstractmethod
+    async def from_conf(
+        cls, conf: types.SecurityConfig, driver: Optional[StoreDriverT] = None
+    ) -> "ITokenStore":
+        pass
+
     @abstractmethod
     async def put(self, key: str, value: str, ttl: Optional[int] = None) -> bool:
         pass
@@ -20,41 +32,15 @@ class TokenStoreSpec(ABC):
         pass
 
     @staticmethod
-    @abstractmethod
     def generate(sign: Optional[str] = None) -> str:
-        pass
+        return token_urlsafe(16)
 
 
-class AuthSpec(ABC):
-
-    conf: JWTConfig
-    store: Optional[TokenStoreSpec]
-
+class IAuth(metaclass=ABCMeta):
     @abstractmethod
-    def encode(self, payload: Dict[str, Any], exp=None, iss=None, aud=None):
+    def get_user_id(self, request) -> str:
         pass
 
     @abstractmethod
-    def decode(
-        self, encoded, verify_signature=True, verify_exp=True, iss=None, aud=None
-    ) -> Dict[str, Any]:
-        pass
-
-    @abstractmethod
-    def validate(
-        self,
-        token: str,
-        required_scopes: Optional[List[str]],
-        require_all=True,
-        iss=None,
-        aud=None,
-    ) -> Dict[str, Any]:
-        pass
-
-    @abstractmethod
-    async def refresh_token(self, access_token, refresh_token) -> JWTResponse:
-        pass
-
-    @abstractmethod
-    async def store_refresh_token(self, username: str) -> str:
+    def validate_request(self, request, policies: List[str] = None, require_all=True):
         pass

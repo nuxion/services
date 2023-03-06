@@ -22,7 +22,6 @@ def validate(
     scopes: List[str],
     user_scopes: List[str],
     require_all=True,
-    require_all_actions=True,
 ) -> bool:
     """
     from sanic_jwt

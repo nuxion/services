@@ -1,21 +1,15 @@
-from __future__ import annotations
-
 from copy import deepcopy
-from typing import Any, Callable, Dict, List, Optional, Set
+from typing import Any, Dict, List, Optional
 
 import jwt
-from services.errors import BadConfigurationException
-from services.security import AuthSpec, TokenStoreSpec, open_keys, scopes
-from services.types import SecuritySettings, JWTConfig, JWTResponse
-from services.utils import get_class
 
-from .errors import AuthValidationFailed
-from .utils import get_delta
+from services import errors, types
+from services.security import base, scopes
+from services.security.utils import get_delta
 
 
-class Auth(AuthSpec):
-
-    def __init__(self, conf: JWTConfig, store: Optional[TokenStoreSpec] = None):
+class JWTAuth(base.IAuth):
+    def __init__(self, conf: types.SecurityConfig, store: base.ITokenStore):
         """
         It is a wrapper around jwt which produces jwt tokens.
         By default it will add a "exp" claim, other claims.
@@ -24,8 +18,22 @@ class Auth(AuthSpec):
         a payload to encode. In that case if both configurations exists, it will
         prioritize the payload configuration.
         """
-        self.conf = conf
+        self.conf = conf.jwt
         self.store = store
+
+    def get_user_id(self, request) -> str:
+        pass
+
+    def validate_request(self, request, policies: List[str] = None, require_all=True):
+        token = request.token
+        if token:
+            try:
+                decoded = self.validate(token, policies, require_all)
+                request.ctx.token_data = decoded
+                request.ctx.is_authenticated = True
+                request.ctx.is_authorized = True
+            except errors.AuthValidationFailed:
+                pass
 
     def _get_secret_encode(self):
         """because jwt allows the use of a simple secret or a pairs of keys
@@ -123,9 +131,9 @@ class Auth(AuthSpec):
                     required_scopes, user_scopes, require_all=require_all
                 )
                 if not valid:
-                    raise AuthValidationFailed()
-        except jwt.InvalidTokenError as e:
-            raise AuthValidationFailed()
+                    raise errors.AuthValidationFailed()
+        except jwt.InvalidTokenError:
+            raise errors.AuthValidationFailed()
 
         return decoded
 
@@ -144,7 +152,7 @@ class Auth(AuthSpec):
             is_valid = True
         return is_valid
 
-    async def refresh_token(self, access_token, refresh_token) -> JWTResponse:
+    async def refresh_token(self, access_token, refresh_token) -> types.JWTResponse:
         if self.store:
             is_valid = await self.validate_refresh_token(access_token, refresh_token)
             if is_valid:
@@ -153,34 +161,8 @@ class Auth(AuthSpec):
 
                 _new_refresh = await self.store_refresh_token(decoded["usr"])
                 _new_tkn = self.encode(decoded)
-                new_jwt = JWTResponse(access_token=_new_tkn,
-                                      refresh_token=_new_refresh)
+                new_jwt = types.JWTResponse(
+                    access_token=_new_tkn, refresh_token=_new_refresh
+                )
                 return new_jwt
-        raise AuthValidationFailed()
-
-
-def auth_from_settings(
-    settings: SecuritySettings, store: Optional[TokenStoreSpec] = None
-) -> AuthSpec:
-    """Intiliazie a `Auth` based on settings."""
-    AuthClass = get_class(settings.AUTH_CLASS)
-    keys = None
-    secret = None
-    if settings.JWT_PUBLIC and settings.JWT_PRIVATE:
-        keys = open_keys(settings.JWT_PUBLIC, settings.JWT_PRIVATE)
-    elif settings.JWT_SECRET:
-        secret = settings.JWT_SECRET
-    else:
-        raise BadConfigurationException("JWT_PUBLIC or JWT_SECRET")
-
-    conf = JWTConfig(
-        alg=settings.JWT_ALG,
-        exp_min=settings.JWT_EXP,
-        keys=keys,
-        secret=secret,
-        issuer=settings.JWT_ISS,
-        audience=settings.JWT_AUD,
-        requires_claims=settings.JWT_CLAIMS_REQUIRED,
-        ttl_refresh_token=settings.REFRESH_TOKEN_TTL,
-    )
-    return AuthClass(conf, store=store)
+        raise errors.AuthValidationFailed()
