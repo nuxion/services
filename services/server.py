@@ -70,7 +70,7 @@ def create_srv(
         app.ext.openapi.secured("token")
         # secure_app: WebAppSpec = get_class("services.security.web.WebApp")()
         # secure_app.init(app, settings)
-        Authenticator(app)
+        # Authenticator(app)
 
     for sd in settings.STATICFILES_DIRS:
         app.static(sd.uripath, sd.localdir, name=sd.name)
