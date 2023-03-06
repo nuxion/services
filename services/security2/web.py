@@ -1,6 +1,6 @@
 from functools import wraps
 from inspect import isawaitable
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from sanic import Request, json
 
@@ -15,9 +15,12 @@ class Authenticator:
     ):
         self._scopes = None
         self._require_all = False
-        self._interfaces = None
-        if not app:
+        self._validators: Dict[str, IAuth] = {}
+        if app:
             self.init_app(app)
+
+    def register_validator(self, name: str, validator: IAuth):
+        self._validators.update({name: validator})
 
     def init_app(self, app):
         app.ctx.auth_beta = self
@@ -28,7 +31,7 @@ class Authenticator:
 
     def bp_middleware(self, request):
         valid = self.validate(
-            self._interfaces, request, self._scopes, self._require_all
+            self._validators, request, self._scopes, self._require_all
         )
         if not valid:
             raise errors.WebAuthFailed()
@@ -36,11 +39,11 @@ class Authenticator:
     def init_bp(
         self,
         bp,
-        validators: List[IAuth],
+        validators: Dict[str, IAuth],
         scopes: Optional[List[str]] = None,
         require_all=False,
     ):
-        self._interfaces = validators
+        self._validators = validators
         self._scopes = scopes
         self._require_all = require_all
         bp.on_request(self.bp_middleware)
@@ -50,7 +53,7 @@ class Authenticator:
 
     def validate(
         self,
-        validators: List[IAuth],
+        validators: List[str],
         request,
         policies: List[str] = None,
         require_all=True,
@@ -59,8 +62,10 @@ class Authenticator:
         request.ctx.is_authenticated = False
         request.ctx.is_authorized = False
         request.ctx.user_id = None
-        for auth in validators:
-            auth.validate_request(request, policies, require_all)
+        for v in validators:
+            auth = self._validators.get(v)
+            if auth:
+                auth.validate_request(request, policies, require_all)
 
         if request.ctx.is_authenticated and request.ctx.is_authenticated:
             valid = True
@@ -72,7 +77,7 @@ def get_authenticator(request) -> Authenticator:
 
 
 def protected(
-    validators: List[IAuth], scopes: Optional[List[str]] = None, require_all=True
+    validators: List[str], scopes: Optional[List[str]] = None, require_all=True
 ):
     """verify a token from a request.
     Optionally if a list of scopes is given then will check that scopes

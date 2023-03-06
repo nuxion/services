@@ -5,10 +5,18 @@ from services import types
 from services.security2.base import ITokenStore
 
 
-class MemoryTokenStore(ITokenStore):
+class MemoryTokenStore(ITokenStore[dict]):
     def __init__(self, conf: types.SecurityConfig):
         self.conf = conf
         self.data: Dict[str, str] = {}
+
+    @classmethod
+    async def from_conf(
+        cls, conf: types.SecurityConfig, driver: Optional[dict] = None
+    ) -> "MemoryTokenStore":
+        if not driver:
+            driver = {}
+        return cls(conf, driver)
 
     async def put(self, key: str, value: str, ttl: Optional[int] = None) -> bool:
         self.data[key] = value
