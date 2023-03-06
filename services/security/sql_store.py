@@ -8,7 +8,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 
 from services import types
-from services.security2.base import ITokenStore
+from services.security.base import ITokenStore
 
 meta = MetaData()
 

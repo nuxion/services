@@ -11,7 +11,7 @@ from services.redis_conn import create_pool
 from services.templates import Render
 from services.types import Settings
 from services.utils import get_class, get_version
-from services.security2.web import Authenticator
+from services.security.web import Authenticator
 
 version = get_version()
 

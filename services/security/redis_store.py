@@ -3,7 +3,7 @@ from typing import Optional, Union
 import redis.asyncio as redis
 
 from services import types
-from services.security2.base import ITokenStore
+from services.security.base import ITokenStore
 
 
 class RedisTokenStore(ITokenStore[redis.client.Redis]):

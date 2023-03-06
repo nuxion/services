@@ -142,7 +142,6 @@ def users_feature(opts: ScriptOpts):
     dst = f"{opts.base_path}/{opts.app_name}"
     data = opts.dict()
     render_to_file(template="app/users_bp.py", dst=f"{dst}/api/users.py", data=data)
-    render_to_file(template="app/users_bp2.py", dst=f"{dst}/api/users2.py", data=data)
     render_to_file(
         template="app/users_models.py", dst=f"{dst}/users_models.py", data=data
     )

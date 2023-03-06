@@ -1,10 +1,9 @@
 from sanic import Sanic
 
 from services.base import ViewSet, WebAppSpec
-from services.security import get_app_auth
-from services.security2 import Authenticator
-from services.security2.jwtauth import JWTAuth
-from services.security2.memory_store import MemoryTokenStore
+from services.security import Authenticator
+from services.security.jwtauth import JWTAuth
+from services.security.memory_store import MemoryTokenStore
 from services.types import Settings
 
 web = ViewSet(
@@ -17,7 +16,7 @@ web = ViewSet(
 from .managers import UserManager, GroupManager
 
 api = ViewSet(
-        blueprints=["users2", "{{ data.app_name }}"],
+        blueprints=["users", "{{ data.app_name }}"],
         package="{{ data.app_name }}.api"
 )
 
@@ -35,15 +34,6 @@ class WebApp(WebAppSpec):
         um = UserManager(salt=settings.SECURITY2.secret_key, groups=gm)
         app.ext.dependency(um)
         db = self.get_db(app, settings.USER_DB)
-        # auth = get_app_auth(app)
-
-        # app.ctx.users_mg = UserManager(
-        #     auth,
-        #     db=db,
-        #     model_class=settings.USER_MODEL,
-        #     salt=settings.SECURITY.AUTH_SALT,
-        # )
-
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
         app.register_listener(self.hook_users, "before_server_start")

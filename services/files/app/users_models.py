@@ -4,7 +4,7 @@ from sqlalchemy import BigInteger, Column, ForeignKey, String
 from sqlalchemy.orm import declarative_mixin, declared_attr, relationship
 from sqlalchemy.schema import Table
 
-from services.users2 import GroupMixin, UserMixin
+from services.users import GroupMixin, UserMixin
 
 from .db import Base
 

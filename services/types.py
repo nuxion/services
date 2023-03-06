@@ -181,14 +181,11 @@ class Settings(BaseSettings):
     TEMPLATES_DIR: List[str] = Field(default_factory=list)
     TEMPLATES_PACKAGE_NAME: Optional[str] = None
     DEV_MODE: bool = False
-    SECURITY: Optional[SecuritySettings] = None
     SECURITY2: SecurityConfig = Field(default_factory=SecurityConfig)
     AUTHENTICATORS: List[str] = Field(default_factory=list)
     CUSTOM_COMMANDS: List[str] = Field(default_factory=list)
     USER_ENDPOINTS: bool = True
-    USER_MODEL: Optional[str] = None
     USER_DB: str = "default"
-    USER_MANAGER_CLASS = "services.user.managers.UserManager"
 
     APPS: List[str] = []
 
