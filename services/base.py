@@ -41,9 +41,14 @@ class WebAppSpec(ABC):
 
     name: str
     views: List[ViewSet]
+    auth: Authenticator
 
-    def __init__(self):
+    #    self.auth: Authenticator = Authenticator()
+    def __init__(self, app: Sanic, settings: Settings):
         self.auth: Authenticator = Authenticator()
+        app.ctx.auth_beta = self.auth
+        self.app = app
+        self.init(app, settings)
 
     @abstractmethod
     def init(self, app: Sanic, settings: Settings):
@@ -65,6 +70,9 @@ class WebAppSpec(ABC):
 
     def get_request_settings(self, request: Request) -> Settings:
         return request.app.config.SETTINGS
+
+    def get_request_auth(self, request: Request) -> Authenticator:
+        return request.app.ctx.auth_beta
 
 
 class PluginSpec(ABC):

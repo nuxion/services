@@ -49,6 +49,7 @@ class WebApp(WebAppSpec):
         app.register_listener(self.hook_users, "before_server_start")
         store = MemoryTokenStore(settings.SECURITY2)
         jwtauth = JWTAuth(settings.SECURITY2, store)
+        app.config.JWT_ALLOW_REFRESH = settings.SECURITY2.jwt.allow_refresh_token
         self.register_auth_validator(app, "jwt", jwtauth)
 
 
@@ -69,6 +70,7 @@ class WebApp(WebAppSpec):
 
         store = MemoryTokenStore(settings.SECURITY2)
         jwtauth = JWTAuth(settings.SECURITY2, store)
+        app.config.JWT_ALLOW_REFRESH = settings.SECURITY2.jwt.allow_refresh_token
         self.register_auth_validator("jwt", jwtauth)
         self.init_blueprints(app)
         

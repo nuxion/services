@@ -156,6 +156,7 @@ class JWTConfig(BaseModel):
     audience: Optional[str] = None
     requires_claims: List[str] = ["exp"]
     ttl_refresh_token: int = 3600 * 168  # 7 days
+    allow_refresh_token: bool = False
 
     class Config:
         extra = "forbid"

@@ -86,8 +86,8 @@ def create_srv(
         init_db_func(app, settings)
 
     for wapp in settings.APPS:
-        w: WebAppSpec = get_class(wapp)()
-        w.init(app, settings)
+        WebAppClass: WebAppSpec = get_class(wapp)
+        WebAppClass(app, settings)
 
     if with_status_handler:
         app.add_route(status_handler, "/status", name="status")
