@@ -6,7 +6,7 @@ from services.db.plugin import DBHelper
 from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security import protected
 from services.security.jwtauth import JWTAuth
-from services.types import JWTResponse, UserLogin
+from services.types import JWTPayload, JWTResponse, UserLogin
 
 from ..managers import UserManager
 
@@ -21,22 +21,17 @@ async def login_handler(request: Request, um: UserManager, auth: JWTAuth, db: DB
     # session = db.get_session(request)
     try:
         creds = UserLogin(**request.json)
-        async with db.get_session(request) as session:
+        async with db.with_session(request) as session:
             user = await um.authenticate(
                 session, username=creds.username, to_verify=creds.password
             )
-        await db.dispose(request)
     except AuthValidationFailed as exc:
         raise WebAuthFailed() from exc
 
     # jwt = await manager.generate_token(user)
-    payload = {"usr": user.username, "scopes": user.scopes}
-    encoded = auth.encode(payload)
-    rfk = None
-    if auth.store:
-        rfk = await auth.store_refresh_token(user.username)
-    jwt = JWTResponse(access_token=encoded, refresh_token=rfk)
-    return json(jwt.dict(), 200)
+    payload = JWTPayload(custom={"usr": user.username, "scopes": user.scopes})
+    tkn = await auth.generate_token(payload)
+    return json(tkn.dict(), 200)
 
 
 @users_bp.get("/verify")
