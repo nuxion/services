@@ -2,8 +2,13 @@
 # pylint: disable=line-too-long
 from typing import Any, Callable, Dict, List, Optional, Type, Union
 
-from jinja2 import (Environment, FileSystemLoader, PackageLoader, Template,
-                    select_autoescape)
+from jinja2 import (
+    Environment,
+    FileSystemLoader,
+    PackageLoader,
+    Template,
+    select_autoescape,
+)
 from jinja2.ext import Extension
 from sanic import Sanic
 from services.types import Settings
@@ -115,6 +120,7 @@ class Render:
         ctx = {
             "request": request.ctx.__dict__,
         }
+        print(ctx)
         rendered = await template.render_async(ctx, **kwargs)
         return rendered
 

@@ -147,6 +147,15 @@ class KeyPairs(BaseModel):
     private: str
 
 
+class JWTPayload(BaseModel):
+    exp: Optional[int] = None
+    iat: Optional[int] = None
+    iss: Optional[str] = None
+    sub: Optional[str] = None
+    aud: Optional[str] = None
+    custom: Dict[str, Any] = Field(default_factory=dict)
+
+
 class JWTConfig(BaseModel):
     alg: str
     exp_min: int = 30
@@ -169,6 +178,7 @@ class SecurityConfig(BaseModel):
     token_store_uri: str = "sqlite+aiosqlite:///:memory:"
     authenticators: List[str] = Field(default_factory=list)
     ttl_refresh_token: int = 3600 * 168  # 7 days
+    domain: str = "localhost"
 
 
 class Settings(BaseSettings):
@@ -237,3 +247,28 @@ class HtmlData(BaseModel):
     title: str
     content: Dict[str, Any]
     meta: Optional[Dict[str, str]] = None
+
+
+class Cookie(BaseModel):
+    """
+    expires: datetime - The time for the cookie to expire on the client’s browser.
+
+    :param max_age:  Number of seconds the cookie should live for.
+    :param path: The subset of URLs to which this cookie applies. Defaults to /.
+    :param domain: Specifies the domain for which the cookie is valid.
+        An explicitly specified domain must always start with a dot.
+    :param max_age: Number of seconds the cookie should live for.
+    :param secure: Specifies whether the cookie will only be sent
+        via HTTPS.
+    :param httponly: Specifies whether the cookie cannot be read by JavaScript.
+    :param samesite: Default is browser dependent, specification states
+        (Lax, Strict, and None) are valid values.
+    """
+
+    value: str
+    domain: str
+    httponly: bool = True
+    path: str = "/"
+    secure: bool = True
+    samesite: str = "lax"
+    max_age: int = Field(alias="max-age", default=60 * 60)

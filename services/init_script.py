@@ -151,6 +151,11 @@ def users_feature(opts: ScriptOpts):
         template="app/commands/users.py", dst=f"{dst}/commands/users.py", data=data
     )
 
+    shutil.copy(
+        f"{get_package_dir('services')}/files/login.html",
+        f"{opts.base_path}/{opts.app_name}/templates/login.html",
+    )
+
 
 def create_settings(opts: ScriptOpts):
     mkdir_p(f"{opts.base_path}/server_conf")
@@ -181,7 +186,8 @@ def create_project(opts: ScriptOpts):
     default_app = ask_webapp_name(opts.app_name)
     opts.app_name = default_app
 
-    create_settings(opts)
+    if not Path(f"{opts.base_path}/server_conf").is_dir():
+        create_settings(opts)
 
     render_to_file(template="app/alembic.ini", dst=f"{opts.base_path}/alembic.ini")
 

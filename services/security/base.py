@@ -1,10 +1,12 @@
 from abc import ABCMeta, abstractmethod
 from secrets import token_urlsafe
 from typing import Generic, List, Optional, TypeVar, Union
+from pydantic import BaseModel
 
 from services import types
 
 StoreDriverT = TypeVar("StoreDriverT")
+UserAuthT = TypeVar("UserAuthT", bound=BaseModel)
 
 
 class ITokenStore(Generic[StoreDriverT], metaclass=ABCMeta):
@@ -38,9 +40,13 @@ class ITokenStore(Generic[StoreDriverT], metaclass=ABCMeta):
 
 class IAuth(metaclass=ABCMeta):
     @abstractmethod
-    def get_user_id(self, request) -> str:
+    def get_username(self, request) -> Union[str, None]:
         pass
 
     @abstractmethod
     def validate_request(self, request, policies: List[str] = None, require_all=True):
+        pass
+
+    @abstractmethod
+    def update_response(self, request, response):
         pass

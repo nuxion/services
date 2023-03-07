@@ -3,6 +3,7 @@ from sanic import Sanic
 from services.base import ViewSet, WebAppSpec
 from services.security import Authenticator
 from services.security.jwtauth import JWTAuth
+from services.security.sessionauth import SessionAuth
 from services.security.memory_store import MemoryTokenStore
 from services.types import Settings
 
@@ -39,8 +40,10 @@ class WebApp(WebAppSpec):
         app.register_listener(self.hook_users, "before_server_start")
         store = MemoryTokenStore(settings.SECURITY2)
         jwtauth = JWTAuth(settings.SECURITY2, store)
+        session_auth = SessionAuth(settings.SECURITY2, secure=False)
         app.config.JWT_ALLOW_REFRESH = settings.SECURITY2.jwt.allow_refresh_token
         self.register_auth_validator(app, "jwt", jwtauth)
+        self.register_auth_validator(app, "cookie", session_auth)
 
 
         self.init_blueprints(app)
