@@ -4,7 +4,7 @@ from itsdangerous import TimestampSigner
 from itsdangerous.exc import BadSignature
 
 from services import types
-from services.security import IAuth, ITokenStore
+from services.security import IAuth
 
 
 class SessionAuth(IAuth):
@@ -34,6 +34,12 @@ class SessionAuth(IAuth):
         response.cookies[self.cookie]["httponly"] = True
         response.cookies[self.cookie]["secure"] = self._secure
         response.cookies[self.cookie]["samesite"] = "lax"
+        response.cookies[self.cookie]["max-age"] = self.conf.ttl_refresh_token
+        return response
+
+    def unset_cookie(self, response):
+        response.cookies[self.cookie] = "expired"
+        response.cookies[self.cookie]["max-age"] = 0
         return response
 
     def decode_request(self, request) -> Union[str, None]:
