@@ -16,11 +16,17 @@ class Authenticator:
         self._scopes = None
         self._require_all = False
         self._validators: Dict[str, IAuth] = {}
+        self._validators_list = set()
         if app:
             self.init_app(app)
 
     def register_validator(self, name: str, validator: IAuth):
-        self._validators.update({name: validator})
+        if name not in self._validators_list:
+            self._validators.update({name: validator})
+            self._validators_list.add(name)
+
+    def list_validators(self) -> List[str]:
+        return list(self._validators_list)
 
     def init_app(self, app):
         app.ctx.auth_beta = self
@@ -72,6 +78,12 @@ class Authenticator:
             valid = True
         return valid
 
+    def update_response(self, validators: List[str], request: Request, response):
+        for v in validators:
+            auth = self._validators.get(v)
+            if auth:
+                auth.update_response(request, response)
+
 
 def get_authenticator(request) -> Authenticator:
     return request.app.ctx.auth_beta
@@ -103,6 +115,7 @@ def protected(
             if isawaitable(response):
                 response = await response
 
+            auth.update_response(validators, request, response)
             return response
 
         return decorated_function

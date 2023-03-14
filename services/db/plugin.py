@@ -1,15 +1,14 @@
-import os
-from contextvars import ContextVar
+import contextlib
 
-from sanic import Request, Sanic
+from sanic import Sanic
 from sanic.log import logger
-from sanic.response import HTTPResponse
-from services import defaults
-from services.base import PluginSpec
-from services.db.sqlhelper import SQL, AsyncSQL
-from services.types import Settings
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
+
+from services.db.sqlhelper import AsyncSQL
+from services.types import Settings
+
+# from typing import AsyncContextManager
 
 
 class DBHelper:
@@ -34,6 +33,14 @@ class DBHelper:
     async def dispose(self, request, *, name="default"):
         db = self.get_db(request, name=name)
         await db.dispose()
+
+    @contextlib.asynccontextmanager
+    async def with_session(self, request) -> AsyncSession:
+        try:
+            async with self.get_session(request) as session:
+                yield session
+        finally:
+            await self.dispose(request)
 
 
 def init_db(app: Sanic, settings: Settings):
