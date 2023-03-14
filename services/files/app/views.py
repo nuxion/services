@@ -1,10 +1,15 @@
 from sanic import Blueprint, Request
-from sanic.response import html
-from sanic_ext import openapi
-from services.shortcuts import async_render
-from services.types import HtmlData
+from sanic.response import html, redirect
 from sanic.views import HTTPMethodView
+from sanic_ext import openapi
+
+from services.db.plugin import DBHelper
+from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security.sessionauth import SessionAuth
+from services.shortcuts import async_render
+from services.types import HtmlData, UserLogin
+
+from .managers import UserManager
 
 web_bp = Blueprint("web")
 
@@ -15,18 +20,21 @@ def new_data(content):
 
 @web_bp.get("/")
 @openapi.exclude()
-async def default_handler(request: Request):
-    data = new_data(dict(msg="hello"))
+async def default_handler(request: Request, auth: SessionAuth):
+    user = auth.get_username(request)
+    data = new_data(dict(msg="hello", username=user))
     text = await async_render(request, "index.html", data)
     return html(text)
 
 
-# @web_bp.get("/login")
-# @openapi.exclude()
-# async def login_handler(request: Request):
-#     data = new_data(dict(msg="hello"))
-#     text = await async_render(request, "login.html", data)
-#     return html(text)
+@web_bp.get("/logout")
+@openapi.exclude()
+async def logout_handler(request: Request, auth: SessionAuth):
+    response = redirect("/")
+    user = auth.get_username(request)
+    if user:
+        response = auth.unset_cookie(response)
+    return response
 
 
 class LoginView(HTTPMethodView):
@@ -35,13 +43,45 @@ class LoginView(HTTPMethodView):
         text = await async_render(request, "login.html", data)
         return html(text)
 
-    async def post(self, request, auth: SessionAuth):
-        data = new_data(dict(msg="POST ACTION"))
+    async def post(self, request, auth: SessionAuth, um: UserManager, db: DBHelper):
+        try:
+            creds = UserLogin(
+                username=request.form.get("username"),
+                password=request.form.get("password"),
+            )
+            async with db.with_session(request) as session:
+                user = await um.authenticate(
+                    session, username=creds.username, to_verify=creds.password
+                )
+        except AuthValidationFailed as exc:
+            raise WebAuthFailed() from exc
+
+        response = redirect("/")
+        auth.set_cookie(response, user.username)
+        return response
+
+
+class RegisterView(HTTPMethodView):
+    async def get(self, request):
+        data = new_data(dict(msg="hello"))
         text = await async_render(request, "login.html", data)
-        print(request.body)
-        response = html(text)
-        auth.set_cookie(response, "test")
-        print(response.cookies)
+        return html(text)
+
+    async def post(self, request, auth: SessionAuth, um: UserManager, db: DBHelper):
+        try:
+            creds = UserLogin(
+                username=request.form.get("username"),
+                password=request.form.get("password"),
+            )
+            async with db.with_session(request) as session:
+                user = await um.authenticate(
+                    session, username=creds.username, to_verify=creds.password
+                )
+        except AuthValidationFailed as exc:
+            raise WebAuthFailed() from exc
+
+        response = redirect("/")
+        auth.set_cookie(response, user.username)
         return response
 
 

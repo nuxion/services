@@ -2,7 +2,12 @@
 {% block content %}
   <div id="app"></div>
   <p class="text-indigo-500 text-4xl">
-     Hello world
+    {% if data.content.username %}
+    Hello {{ data.content.username }}
+    {% else %}
+    Hello Anon user..
+    {% endif %}
+    {{ data }}
   </p>
 {% endblock content %}
 

@@ -115,13 +115,19 @@ class Render:
         app.ctx.render = self
         self.env.globals.update(url_for=app.url_for)
 
+    def _get_app(self, request) -> Sanic:
+        return request.app
+
     async def async_render(self, request, tpl_name, **kwargs) -> str:
         template = self.env.get_template(tpl_name)
-        ctx = {
-            "request": request.ctx.__dict__,
-        }
-        print(ctx)
-        rendered = await template.render_async(ctx, **kwargs)
+        # ctx = {
+        #     "request": request.ctx.__dict__,
+        # }
+        app = self._get_app(request)
+        conf = {}
+        if app.config.SETTINGS.DEBUG:
+            conf = app.config.SETTINGS
+        rendered = await template.render_async(conf=conf, **kwargs)
         return rendered
 
     def get_template(self, tpl_name) -> Template:

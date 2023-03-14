@@ -241,12 +241,29 @@ class TokenCreds(BaseModel):
         extra = "forbid"
 
 
+class DefaultMeta(BaseModel):
+    keywords: Optional[str] = None
+    description: Optional[str] = None
+    author: Optional[str] = None
+    viewport: str = "width=device-width, initial-scale=1.0, maximum-scale=1"
+
+
+class OGMeta(BaseModel):
+    title: str
+    description: str
+    url: str
+    image: str
+    type_: str = "website"
+
+
 class HtmlData(BaseModel):
     # navbar: List[MenuOption]
     ctx: Dict[str, Any]
     title: str
-    content: Dict[str, Any]
-    meta: Optional[Dict[str, str]] = None
+    content: Dict[str, Any] = Field(default_factory=dict)
+    lang: str = "en"
+    meta: DefaultMeta = Field(default_factory=DefaultMeta)
+    og: Optional[OGMeta] = None
 
 
 class Cookie(BaseModel):
