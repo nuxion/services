@@ -6,6 +6,7 @@ from services.security.jwtauth import JWTAuth
 from services.security.sessionauth import SessionAuth
 from services.security.memory_store import MemoryTokenStore
 from services.types import Settings
+from services.workers import Dummy
 
 web = ViewSet(
     blueprints=["views"],
@@ -35,8 +36,10 @@ class WebApp(WebAppSpec):
         um = UserManager(salt=settings.SECURITY2.secret_key, groups=gm)
         app.ext.dependency(um)
         db = self.get_db(app, settings.USER_DB)
+
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
+        app.register_listener(self.hook_users, "before_server_start")
         app.register_listener(self.hook_users, "before_server_start")
         store = MemoryTokenStore(settings.SECURITY2)
         jwtauth = JWTAuth(settings.SECURITY2, store)
@@ -45,7 +48,8 @@ class WebApp(WebAppSpec):
         self.register_auth_validator(app, "jwt", jwtauth)
         self.register_auth_validator(app, "cookie", session_auth)
 
-
+        worker = Dummy(proc_name="DummyWorker")
+        worker.init_app(app)
         self.init_blueprints(app)
 {% else %}
 
