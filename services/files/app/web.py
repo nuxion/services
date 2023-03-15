@@ -6,7 +6,7 @@ from services.security.jwtauth import JWTAuth
 from services.security.sessionauth import SessionAuth
 from services.security.memory_store import MemoryTokenStore
 from services.types import Settings
-from services.workers import Dummy
+from services import workers
 
 web = ViewSet(
     blueprints=["views"],
@@ -48,8 +48,12 @@ class WebApp(WebAppSpec):
         self.register_auth_validator(app, "jwt", jwtauth)
         self.register_auth_validator(app, "cookie", session_auth)
 
-        worker = Dummy(proc_name="DummyWorker")
-        worker.init_app(app)
+        workers.create(app, app_name=self.name, qname="default")
+        workers.TaskQueue.setup(app, qname="default")
+
+        # worker = Dummy(proc_name="DummyWorker")
+        # worker.init_app(app)
+
         self.init_blueprints(app)
 {% else %}
 

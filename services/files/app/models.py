@@ -1,4 +1,5 @@
 from typing import Any, Dict
+from pydantic import BaseModel
 from sqlalchemy import BigInteger, Column, String
 {% if data.users %}
 from {{ data.app_name}}.users_models import UserModel, GroupModel, user_group_table
@@ -14,3 +15,9 @@ class ExampleModel(Base):
 
     id = Column(BigInteger, primary_key=True)
     name = Column(String())
+
+
+class Person(BaseModel):
+    name: str
+    lastname: str
+
