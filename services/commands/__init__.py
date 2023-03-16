@@ -1,4 +1,4 @@
-from .common import create_app_cli
+from .common import create_app_cli, run_task_cli
 from .db import db_cli
 from .web import web_cli
 

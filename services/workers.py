@@ -160,26 +160,25 @@ class Scheduler:
         self.tasks: Dict[str, asyncio.Task] = {}
         self.results: Dict[str, Any] = {}
 
-    async def _exec_task(self, task: Task):
+    async def exec_task(self, task: Task):
         # ctx = get_context("fork")
         # with concurrent.futures.ProcessPoolExecutor(mp_context=ctx) as pool:
         logger.info("Executing task %s [%s]", task.name, task.id)
         result = None
         fn = _get_function(self._base_package, task)
         kwargs = _get_kwargs(task, fn)
-        if inspect.iscoroutinefunction(fn):
-            coro = self._loop.run_in_executor(None, partial(fn, **kwargs))
-        else:
-            coro = fn(**kwargs)
         try:
-            await coro()
+            if inspect.iscoroutinefunction(fn):
+                result = await fn(**kwargs)
+            else:
+                result = await self._loop.run_in_executor(None, partial(fn, **kwargs))
         except asyncio.exceptions.TimeoutError:
             logger.error("Task error %s [%s]", task.name, task.id)
 
         return result
 
     def start_task(self, task: Task) -> asyncio.Task:
-        _task = self._loop.create_task(self._exec_task(task))
+        _task = self._loop.create_task(self.exec_task(task))
         self.tasks[task.id] = _task
         return _task
 
@@ -211,7 +210,7 @@ class Scheduler:
                     _task.add_done_callback(lambda _: sem.release())
 
 
-def _worker(base_package, qname, queue: Queue) -> None:
+def cpu_worker(base_package, qname, queue: Queue) -> None:
     """based on https://amhopkins.com/background-job-worker"""
     logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
     pid = getpid()
@@ -226,9 +225,31 @@ def _worker(base_package, qname, queue: Queue) -> None:
 
     except KeyboardInterrupt:
         logger.info("Shutting down %s", pid)
+    finally:
+        logger.info("Stopping CPU bound worker [%s]. Goodbye", pid)
 
 
-def _async_worker(base_package, qname, queue: Queue) -> None:
+def standalone_cpu_worker(base_package, task: Task):
+    logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
+    pid = getpid()
+    logger.info(">> CPU Bound worker reporting for duty: %s", pid)
+    try:
+        _exec_task(base_package, task)
+    except KeyboardInterrupt:
+        logger.info("Shutting down %s", pid)
+    finally:
+        logger.info("Stopping CPU bound worker [%s]. Goodbye", pid)
+
+
+def _finish_pending_tasks(loop, scheduler: Scheduler):
+    if scheduler.tasks:
+        drain = asyncio.wait_for(
+            asyncio.gather(*list(scheduler.tasks.values())), timeout=60
+        )
+        loop.run_until_complete(drain)
+
+
+def async_worker(base_package, qname, queue: Queue) -> None:
     """based on https://amhopkins.com/background-job-worker"""
     logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
     pid = getpid()
@@ -241,20 +262,31 @@ def _async_worker(base_package, qname, queue: Queue) -> None:
         loop.create_task(scheduler.run())
         loop.run_forever()
         # loop.run_until_complete(scheduler.run())
-        logger.info("FINISH UNTIL")
-
     except KeyboardInterrupt:
         logger.info("Shutting down %s", pid)
     finally:
-        if scheduler.tasks:
-            drain = asyncio.wait_for(
-                asyncio.gather(*list(scheduler.tasks.values())), timeout=60
-            )
-            loop.run_until_complete(drain)
+        _finish_pending_tasks(loop, scheduler)
     logger.info("Stopping IO bound worker [%s]. Goodbye", pid)
 
 
-def create(app: Sanic, app_name, qname="default", fn: Callable = _async_worker) -> None:
+def standalone_io_worker(base_package, task: Task):
+    logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
+    pid = getpid()
+    logger.info(">> IO Bound worker reporting for duty: %s", pid)
+    loop = asyncio.new_event_loop()
+    tq = TaskQueue("default", queue=Queue())
+    scheduler = Scheduler(tq, loop, base_package=base_package)
+    try:
+        # loop.create_task(scheduler.exec_task(task))
+        loop.run_until_complete(scheduler.exec_task(task))
+    except KeyboardInterrupt:
+        logger.info("Shutting down %s", pid)
+    finally:
+        _finish_pending_tasks(loop, scheduler)
+    logger.info("Stopping IO bound worker [%s]. Goodbye", pid)
+
+
+def create(app: Sanic, app_name, qname="default", wk: Callable = async_worker) -> None:
     @app.main_process_start
     async def start(app: Sanic):
         manager = Manager()
@@ -266,7 +298,7 @@ def create(app: Sanic, app_name, qname="default", fn: Callable = _async_worker) 
     async def ready(app: Sanic):
         app.manager.manage(
             f"{WORKER_PREFIX}{qname}",
-            fn,
+            wk,
             {
                 "base_package": app_name,
                 "qname": qname,
