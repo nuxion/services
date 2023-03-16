@@ -1,9 +1,10 @@
 import contextlib
-from typing import Any, Dict, List
+from typing import Any, List
+from datetime import datetime
 
 from sqlalchemy import JSON, Column, DateTime, Integer, MetaData, String, Table
 from sqlalchemy import delete as sqldelete
-from sqlalchemy import select
+from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.sql import functions
 
@@ -131,11 +132,37 @@ class SQLBackend(IState):
             tasks = [Task(**dict(r)) for r in rows]
         return tasks
 
+    async def update_status(self, taskid: str, status: str) -> bool:
+        now = datetime.utcnow()
+        async with self.begin() as conn:
+            stmt = (
+                update(self._tasks)
+                .where(self._tasks.c.id == taskid)
+                .values(status=status, updated_at=now)
+            )
+            await conn.execute(stmt)
+        return True
+
     async def delete_task(self, taskid: str) -> bool:
-        raise NotImplementedError()
+        async with self.begin() as conn:
+            stmt = sqldelete(self._tasks).where(self._tasks.c.id == taskid)
+            await conn.execute(stmt)
+        return True
 
     async def get_result(self, taskid: str) -> Any:
-        raise NotImplementedError()
+        async with self.conn() as conn:
+            stmt = select(self._tasks).where(self._tasks.c.id == taskid).limit(1)
+            res = await conn.execute(stmt)
+            row = res.fetchone()
+            task_dict = dict(row)
+        return task_dict["result"]
 
     async def set_result(self, taskid: str, result: Any):
-        raise NotImplementedError()
+        now = datetime.utcnow()
+        async with self.begin() as conn:
+            stmt = (
+                update(self._tasks)
+                .where(self._tasks.c.id == taskid)
+                .values(result=result, updated_at=now)
+            )
+            await conn.execute(stmt)

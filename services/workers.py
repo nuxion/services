@@ -9,7 +9,7 @@ from functools import partial, wraps
 from multiprocessing import Manager, Queue
 from os import getpid
 from queue import Empty
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, List
 
 from pydantic import BaseModel, Field
 from sanic import Sanic
@@ -97,6 +97,14 @@ class IState(ABC):
 
     @abstractmethod
     async def get_task(self, taskid: str) -> Task:
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def update_status(self, taskid: str, status: TaskStatus) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def list_tasks(self) -> List[Task]:
         raise NotImplementedError()
 
     @abstractmethod
