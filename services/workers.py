@@ -39,7 +39,7 @@ class Task(BaseModel):
     name: str
     params: Dict[str, Any] = Field(default_factory=dict)
     id: str = Field(default_factory=secure_random_str)
-    timeout: int = 60
+    timeout: int = 10
 
 
 def _get_kwargs(task: Task, fn: Callable) -> Dict[str, BaseModel]:
@@ -149,35 +149,41 @@ class TaskQueue:
 class Scheduler:
     STOP = "__STOP__"
 
-    def __init__(self, queue: TaskQueue, loop, base_package, timeout=60, max_jobs=5):
+    def __init__(self, queue: TaskQueue, loop, base_package, timeout=60, max_jobs=3):
         self.queue = queue
         self._loop = loop
         self._base_package = base_package
         self.timeout = timeout
-        self.sem = asyncio.BoundedSemaphore(max_jobs)
+        # self.sem = asyncio.BoundedSemaphore(max_jobs)
+        self.sem = None
         self._max_jobs = max_jobs
         self.tasks: Dict[str, asyncio.Task] = {}
         self.results: Dict[str, Any] = {}
 
-    async def _exec_in_pool(self, fn, params):
+    async def _exec_task(self, task: Task):
         # ctx = get_context("fork")
         # with concurrent.futures.ProcessPoolExecutor(mp_context=ctx) as pool:
-        result = await self._loop.run_in_executor(None, partial(fn, **params))
-        return result
-
-    def start_task(self, task: Task) -> Any:
-        _name = task.name
-        logger.info("Starting task %s", _name)
+        logger.info("Executing task %s [%s]", task.name, task.id)
+        result = None
         fn = _get_function(self._base_package, task)
         kwargs = _get_kwargs(task, fn)
         if inspect.iscoroutinefunction(fn):
-            _task = self._loop.create_task(fn(**kwargs))
+            coro = self._loop.run_in_executor(None, partial(fn, **kwargs))
         else:
-            _task = self._loop.create_task(self._exec_in_pool(fn, kwargs))
-        _task.add_done_callback(lambda _: self.sem.release())
+            coro = fn(**kwargs)
+        try:
+            await coro()
+        except asyncio.exceptions.TimeoutError:
+            logger.error("Task error %s [%s]", task.name, task.id)
+
+        return result
+
+    def start_task(self, task: Task) -> asyncio.Task:
+        _task = self._loop.create_task(self._exec_task(task))
+        self.tasks[task.id] = _task
         return _task
 
-    def _clean(self):
+    def _sentinel(self):
         logger.debug("> Cleaning")
         to_delete = []
         for k, task in self.tasks.items():
@@ -186,21 +192,23 @@ class Scheduler:
                 # self.results[k] = r
                 to_delete.append(k)
         for x in to_delete:
-            del self.tasks[k]
+            del self.tasks[x]
 
     async def run(self):
         logger.info("> Starting scheduler")
+        sem = asyncio.Semaphore(self._max_jobs)
         while True:
-            async with self.sem:
+            async with sem:
                 task_dict = self.queue.receive(wait=False)
                 if not task_dict:
-                    self._clean()
+                    self._sentinel()
                     await asyncio.sleep(1)
                 else:
                     task = Task(**task_dict)
-                    await self.sem.acquire()
+                    await sem.acquire()
                     _task = self.start_task(task)
-                    self.tasks[task.id] = _task
+                    logger.info("task %s [%s] added", task.name, task.id)
+                    _task.add_done_callback(lambda _: sem.release())
 
 
 def _worker(base_package, qname, queue: Queue) -> None:
