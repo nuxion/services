@@ -1,30 +1,120 @@
 import asyncio
+import inspect
 import json
 import logging
-from importlib import import_module
+from abc import ABC, abstractmethod
+from functools import partial, wraps
 from multiprocessing import Manager, Queue
 from os import getpid
-from typing import Callable, Dict, Optional, Any
+from queue import Empty
+from typing import Any, Callable, Dict
 
 from pydantic import BaseModel, Field
 from sanic import Sanic
 from sanic.log import LOGGING_CONFIG_DEFAULTS, logger
-from enum import Enum
+
 from services.utils import get_function, secure_random_str
 
 CTX_PREFIX = "queue_"
 WORKER_PREFIX = "Queue-"
 
 
-class WorkerType(str, Enum):
-    cpu: "cpu-bound"
-    io: "io-bound"
+# class WorkerType(str, Enum):
+#     cpu: "cpu-bound"
+#     io: "io-bound"
+
+
+# def task(name: str, timeout=60, raise_on_error=True):
+#     def decorator(f):
+#         @wraps(f)
+#         def decorated_function(*args, **kwargs):
+#             return result
+#
+#         return decorated_function
+#
+#     return decorator
 
 
 class Task(BaseModel):
     name: str
+    params: Dict[str, Any] = Field(default_factory=dict)
     id: str = Field(default_factory=secure_random_str)
-    payload: BaseModel
+    timeout: int = 60
+
+
+def _get_kwargs(task: Task, fn: Callable) -> Dict[str, BaseModel]:
+    annot = list(fn.__annotations__.keys())
+    kwargs = {}
+    if annot:
+        params_key = annot[0]
+        params = fn.__annotations__[params_key](**task.params)
+        kwargs = {params_key: params}
+    return kwargs
+
+
+def _get_function(base_package, task: Task) -> Callable:
+    _name = task.name
+    if "." not in _name:
+        fn = get_function(f"{base_package}.tasks.{_name}")
+    else:
+        fn = get_function(_name)
+    return fn
+
+
+def _exec_task(base_package, task: Task):
+    _name = task.name
+    logger.info("Starting task %s", _name)
+    fn = _get_function(base_package, task)
+    kwargs = _get_kwargs(task, fn)
+    fn(**kwargs)
+    logger.info("Finished task %s", _name)
+
+
+class IState(ABC):
+    @abstractmethod
+    async def add_task(self, task: Task):
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def get_task(self, taskid: str) -> Task:
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def delete_task(self, taskid: str) -> bool:
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def get_result(self, taskid: str) -> Any:
+        raise NotImplementedError()
+
+    @abstractmethod
+    async def set_result(self, taskid: str, result: Any) -> Any:
+        raise NotImplementedError()
+
+
+class MemoryState(IState):
+    def __init__(self):
+        self.tasks = {}
+        self.results = {}
+
+    async def add_task(self, task: Task):
+        self.tasks[task.id] = task
+
+    async def get_task(self, taskid: str) -> Task:
+        t = self.tasks.get(taskid)
+        if not t:
+            raise KeyError(f"task {taskid} doesn't exist")
+        return t
+
+    async def delete_task(self, taskid: str) -> bool:
+        del self.tasks[taskid]
+        return True
+
+    async def get_result(self, taskid: str) -> Any:
+        return self.results[taskid]
+
+    async def set_result(self, taskid: str, result: Any):
+        self.results[taskid] = result
 
 
 class TaskQueue:
@@ -35,9 +125,16 @@ class TaskQueue:
     def send(self, task: Task) -> None:
         self.queue.put_nowait(task.json())
 
-    def receive(self) -> Dict[str, Any]:
-        rsp = self.queue.get()
-        data = json.loads(rsp)
+    def receive(self, wait=True) -> Dict[str, Any]:
+        if wait:
+            rsp = self.queue.get()
+            data = json.loads(rsp)
+        else:
+            try:
+                rsp = self.queue.get_nowait()
+                data = json.loads(rsp)
+            except Empty:
+                return {}
         return data
 
     @classmethod
@@ -52,61 +149,104 @@ class TaskQueue:
 class Scheduler:
     STOP = "__STOP__"
 
-    def __init__(self, queue, loop):
+    def __init__(self, queue: TaskQueue, loop, base_package, timeout=60, max_jobs=5):
         self.queue = queue
         self._loop = loop
+        self._base_package = base_package
+        self.timeout = timeout
+        self.sem = asyncio.BoundedSemaphore(max_jobs)
+        self._max_jobs = max_jobs
+        self.tasks: Dict[str, asyncio.Task] = {}
+        self.results: Dict[str, Any] = {}
+
+    async def _exec_in_pool(self, fn, params):
+        # ctx = get_context("fork")
+        # with concurrent.futures.ProcessPoolExecutor(mp_context=ctx) as pool:
+        result = await self._loop.run_in_executor(None, partial(fn, **params))
+        return result
+
+    def start_task(self, task: Task) -> Any:
+        _name = task.name
+        logger.info("Starting task %s", _name)
+        fn = _get_function(self._base_package, task)
+        kwargs = _get_kwargs(task, fn)
+        if inspect.iscoroutinefunction(fn):
+            _task = self._loop.create_task(fn(**kwargs))
+        else:
+            _task = self._loop.create_task(self._exec_in_pool(fn, kwargs))
+        _task.add_done_callback(lambda _: self.sem.release())
+        return _task
+
+    def _clean(self):
+        logger.debug("> Cleaning")
+        to_delete = []
+        for k, task in self.tasks.items():
+            if task.done():
+                # r = task.result()
+                # self.results[k] = r
+                to_delete.append(k)
+        for x in to_delete:
+            del self.tasks[k]
 
     async def run(self):
         logger.info("> Starting scheduler")
-
-
-def _get_kwargs(task: Dict[str, Any], fn: Callable) -> Dict[str, BaseModel]:
-    payload_key = list(fn.__annotations__.keys())[0]
-    payload = fn.__annotations__[payload_key](**task["payload"])
-    kwargs = {payload_key: payload}
-    return kwargs
-
-
-def _get_function(base_package, task: Dict[str, Any]) -> Callable:
-    _name = task["name"]
-    if "." not in _name:
-        fn = get_function(f"{base_package}.tasks.{_name}")
-    else:
-        fn = get_function(_name)
-    return fn
-
-
-def _get_queue(request, qname="default") -> TaskQueue:
-    q = getattr(request.app.ctx, f"{CTX_PREFIX}{qname}")
-    return q
-
-
-def _exec_task(base_package, task: Dict[str, Any]):
-    _name = task["name"]
-    logger.info("Starting task %s", _name)
-    fn = _get_function(base_package, task)
-    kwargs = _get_kwargs(task, fn)
-    fn(**kwargs)
-    logger.info("Finished task %s", _name)
+        while True:
+            async with self.sem:
+                task_dict = self.queue.receive(wait=False)
+                if not task_dict:
+                    self._clean()
+                    await asyncio.sleep(1)
+                else:
+                    task = Task(**task_dict)
+                    await self.sem.acquire()
+                    _task = self.start_task(task)
+                    self.tasks[task.id] = _task
 
 
 def _worker(base_package, qname, queue: Queue) -> None:
     """based on https://amhopkins.com/background-job-worker"""
     logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
     pid = getpid()
-    logger.info(">> Worker reporting for duty: %s", pid)
+    logger.info(">> CPU Bound worker reporting for duty: %s", pid)
     tq = TaskQueue(qname=qname, queue=queue)
 
     try:
         while True:
             task_dict = tq.receive()
-            _exec_task(base_package, task_dict)
+            task = Task(**task_dict)
+            _exec_task(base_package, task)
 
     except KeyboardInterrupt:
         logger.info("Shutting down %s", pid)
 
 
-def create(app: Sanic, app_name, qname="default", fn: Callable = _worker) -> None:
+def _async_worker(base_package, qname, queue: Queue) -> None:
+    """based on https://amhopkins.com/background-job-worker"""
+    logging.config.dictConfig(LOGGING_CONFIG_DEFAULTS)
+    pid = getpid()
+    logger.info(">> IO Bound worker reporting for duty: %s", pid)
+    tq = TaskQueue(qname=qname, queue=queue)
+    loop = asyncio.new_event_loop()
+    scheduler = Scheduler(tq, loop, base_package=base_package)
+
+    try:
+        loop.create_task(scheduler.run())
+        loop.run_forever()
+        # loop.run_until_complete(scheduler.run())
+        logger.info("FINISH UNTIL")
+
+    except KeyboardInterrupt:
+        logger.info("Shutting down %s", pid)
+    finally:
+        if scheduler.tasks:
+            drain = asyncio.wait_for(
+                asyncio.gather(*list(scheduler.tasks.values())), timeout=60
+            )
+            loop.run_until_complete(drain)
+    logger.info("Stopping IO bound worker [%s]. Goodbye", pid)
+
+
+def create(app: Sanic, app_name, qname="default", fn: Callable = _async_worker) -> None:
     @app.main_process_start
     async def start(app: Sanic):
         manager = Manager()
@@ -127,6 +267,11 @@ def create(app: Sanic, app_name, qname="default", fn: Callable = _worker) -> Non
         )
 
 
+def _get_queue(request, qname="default") -> TaskQueue:
+    q = getattr(request.app.ctx, f"{CTX_PREFIX}{qname}")
+    return q
+
+
 def submit_task(
     request,
     *,
@@ -136,9 +281,9 @@ def submit_task(
     debug=False,
     base_package=None,
 ) -> Task:
-    t = Task(name=name, payload=payload)
+    t = Task(name=name, params=payload.dict())
     if debug:
-        _exec_task(base_package, t.dict())
+        _exec_task(base_package, t)
     else:
         q = _get_queue(request, qname)
         q.send(t)
