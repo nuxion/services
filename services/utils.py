@@ -3,15 +3,17 @@ import importlib.util
 import json
 import os
 import re
+import secrets
 import subprocess
 import unicodedata
 from enum import Enum
 from importlib import import_module
 from pathlib import Path
+from typing import Callable
 
 from sqlalchemy.sql.schema import MetaData
 
-from services import __about__, defaults
+from services import __about__
 from services.errors import CommandExecutionException
 
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
@@ -183,6 +185,7 @@ def init_blueprints_legacy(app, blueprints_allowed, package_dir="services.web"):
 
 
 def get_meta_from_app(app_name) -> MetaData:
+    """TODO: move to commands"""
     Base = get_class(f"{app_name}.db.Base")
     return Base.metadata
 
@@ -203,3 +206,17 @@ class MimeTypes(Enum):
     doc = "application/msword"
     docx = "application/vnd.openxmlformats-officedocument.wordprocessingml.document"
     gif = "image/gif"
+
+
+def get_function(fullname) -> Callable:
+    mod, name = fullname.rsplit(".", maxsplit=1)
+    pkg = mod.split(".", maxsplit=1)[0]
+    try:
+        module = import_module(mod, pkg)
+    except (ModuleNotFoundError, AttributeError):
+        raise KeyError(fullname)
+    return getattr(module, name)
+
+
+def secure_random_str(size=12) -> str:
+    return secrets.token_urlsafe(size)

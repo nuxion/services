@@ -10,15 +10,34 @@ console = Console()
 
 
 @click.command()
-@click.option("--vite", default=False, is_flag=True, help="Get support for Vite")
-@click.option("--users", default=False, is_flag=True, help="Provide the user system")
+@click.option(
+    "--vite",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Get support for Vite",
+)
+@click.option(
+    "--users",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Provide the user system",
+)
+@click.option(
+    "--tasks",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Add a dummy task and the worker as example",
+)
 @click.option(
     "--name",
     default=None,
     help="Name of the project, if empty it will ask you for a name",
 )
 @click.argument("base_path")
-def create_service_project(base_path, name, vite, users):
+def create_service_project(base_path, name, vite, users, tasks):
     """Start a new project"""
     root = Path(base_path).resolve()
     opts = init_script.ScriptOpts(
@@ -27,6 +46,7 @@ def create_service_project(base_path, name, vite, users):
         app_name=name,
         users=users,
         vite_enabled=vite,
+        tasks=tasks,
     )
     print(opts)
 
