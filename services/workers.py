@@ -3,6 +3,8 @@ import inspect
 import json
 import logging
 from abc import ABC, abstractmethod
+from datetime import datetime
+from enum import Enum
 from functools import partial, wraps
 from multiprocessing import Manager, Queue
 from os import getpid
@@ -35,11 +37,29 @@ WORKER_PREFIX = "Queue-"
 #     return decorator
 
 
+class TaskStatus(str, Enum):
+    created = "CREATED"
+    waiting = "WAITING"
+    running = "RUNNING"
+    cancelled = "CANCELLED"
+    failed = "FAILED"
+    done = "DONE"
+
+
 class Task(BaseModel):
     name: str
     params: Dict[str, Any] = Field(default_factory=dict)
     id: str = Field(default_factory=secure_random_str)
+    state: str = TaskStatus.created
+    app_name: str = "test"
     timeout: int = 10
+    result_ttl: int = 120
+    created_at: datetime = Field(default_factory=datetime.utcnow)
+    updated_at: datetime = Field(default_factory=datetime.utcnow)
+
+    class Config:
+        use_enum_values = True
+        arbitrary_types_allowed = True
 
 
 def _get_kwargs(task: Task, fn: Callable) -> Dict[str, BaseModel]:
