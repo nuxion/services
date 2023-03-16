@@ -17,6 +17,7 @@ class ScriptOpts(BaseModel):
     app_name: Optional[str] = None
     vite_enabled: bool = False
     users: bool = True
+    tasks: bool = False
 
 
 console = Console()
@@ -137,6 +138,12 @@ def create_app(opts: ScriptOpts):
 
     alembic_files(str(opts.base_path), opts.app_name)
 
+    if opts.tasks:
+        render_to_file(template="app/tasks.py", dst=f"{dst}/tasks.py", data=data)
+
+    if opts.users:
+        users_feature(opts)
+
 
 def users_feature(opts: ScriptOpts):
     dst = f"{opts.base_path}/{opts.app_name}"
@@ -192,8 +199,7 @@ def create_project(opts: ScriptOpts):
     render_to_file(template="app/alembic.ini", dst=f"{opts.base_path}/alembic.ini")
 
     create_app(opts)
-    if opts.users:
-        users_feature(opts)
+
     add_command("shell", opts)
 
     final_words(opts)

@@ -1,8 +1,6 @@
-import asyncio
-import os
 import sys
-from multiprocessing import Queue
 from pathlib import Path
+from secrets import token_urlsafe
 
 import click
 from rich.console import Console
@@ -13,11 +11,40 @@ console = Console()
 
 
 @click.command(name="create-app")
+@click.option(
+    "--vite",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Get support for Vite",
+)
+@click.option(
+    "--users",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Provide the user system",
+)
+@click.option(
+    "--tasks",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Add a dummy task and the worker as example",
+)
 @click.argument("appname")
-def create_app_cli(appname):
+def create_app_cli(appname, vite, tasks, users):
     """Create the structure of an app"""
     root = Path.cwd()
-    init_script.create_app(root, appname)
+    opts = init_script.ScriptOpts(
+        base_path=root,
+        secret_key=token_urlsafe(32),
+        app_name=appname,
+        users=users,
+        vite_enabled=vite,
+        tasks=tasks,
+    )
+    init_script.create_app(opts)
     console.print(f"[green bold]App {appname} created.[/]")
 
 

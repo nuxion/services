@@ -6,7 +6,9 @@ from services.security.jwtauth import JWTAuth
 from services.security.sessionauth import SessionAuth
 from services.security.memory_store import MemoryTokenStore
 from services.types import Settings
+{% if data.tasks -%}
 from services import workers
+{% endif -%}
 
 web = ViewSet(
     blueprints=["views"],
@@ -47,9 +49,10 @@ class WebApp(WebAppSpec):
         app.config.JWT_ALLOW_REFRESH = settings.SECURITY2.jwt.allow_refresh_token
         self.register_auth_validator(app, "jwt", jwtauth)
         self.register_auth_validator(app, "cookie", session_auth)
-
+        {% if data.tasks -%}
         workers.create(app, app_name=self.name, qname="default")
         workers.TaskQueue.setup(app, qname="default")
+        {% endif -%}
 
         # worker = Dummy(proc_name="DummyWorker")
         # worker.init_app(app)
@@ -74,6 +77,11 @@ class WebApp(WebAppSpec):
         app.config.JWT_ALLOW_REFRESH = settings.SECURITY2.jwt.allow_refresh_token
         self.register_auth_validator("jwt", jwtauth)
         self.init_blueprints(app)
+        {% if data.tasks -%}
+        workers.create(app, app_name=self.name, qname="default")
+        workers.TaskQueue.setup(app, qname="default")
+        {% endif -%}
+
         
 
 {% endif %}
