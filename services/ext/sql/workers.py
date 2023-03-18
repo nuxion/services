@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.sql import functions
 
-from services.db import async_vacuum
+from services.db import async_vacuum, async_pragma_wal
 from services.workers import (
     IState,
     Task,
@@ -60,7 +60,10 @@ class SQLBackend(IState):
     async def from_uri(cls, uri: str, extra: Dict[str, Any] = {}) -> IState:
         _echo = extra.get("echo", False)
         _table = extra.get("table_state", "tasks_state")
+        _wal = extra.get("wal", True)
         engine = create_async_engine(uri, echo=_echo)
+        if _wal:
+            await async_pragma_wal(engine)
 
         obj = cls(engine, table_state=_table)
         await obj.create_all()
@@ -150,8 +153,12 @@ class SQLBackend(IState):
 
     async def delete_task(self, taskid: str) -> bool:
         async with self.begin() as conn:
-            stmt = sqldelete(self._tasks).where(self._tasks.c.id == taskid)
-            await conn.execute(stmt)
+            r = await self._delete(conn, taskid)
+        return r
+
+    async def _delete(self, conn, taskid: str) -> bool:
+        stmt = sqldelete(self._tasks).where(self._tasks.c.id == taskid)
+        await conn.execute(stmt)
         return True
 
     async def get_result(self, taskid: str) -> Dict[str, Any]:
@@ -163,15 +170,23 @@ class SQLBackend(IState):
         return task_dict["result"]
 
     async def set_result(self, taskid: str, *, result: Dict[str, Any], status: str):
-        print(f"SETTING RESULT {taskid} {status}")
-        now = datetime.utcnow()
         async with self.begin() as conn:
-            stmt = (
-                update(self._tasks)
-                .where(self._tasks.c.id == taskid)
-                .values(result=result, updated_at=now, state=status)
-            )
-            await conn.execute(stmt)
+            await self._set_result(conn, taskid, result, status)
+
+    async def _set_result(
+        self,
+        conn,
+        taskid: str,
+        result: Dict[str, Any],
+        status: str,
+    ):
+        now = datetime.utcnow()
+        stmt = (
+            update(self._tasks)
+            .where(self._tasks.c.id == taskid)
+            .values(result=result, updated_at=now, state=status)
+        )
+        await conn.execute(stmt)
 
     async def _vacuum(self):
         await async_vacuum(self.engine, self._tasks.name)
@@ -201,12 +216,12 @@ class SQLBackend(IState):
             rows = res.fetchall()
             tasks = [Task(**dict(r)) for r in rows]
 
-        futures = []
-        for t in tasks:
-            elapsed = elapsed_time_from_finish(t)
-            print(f"TASk: {t.id} | ELAPSED: {elapsed} | TTL: {t.result_ttl}")
-            if elapsed > t.result_ttl:
-                await self.delete_task(t.id)
+        # futures = []
+        async with self.begin() as conn:
+            for t in tasks:
+                elapsed = elapsed_time_from_finish(t)
+                if elapsed > t.result_ttl:
+                    await self._delete(conn, t.id)
                 # futures.append(self.delete_task(t.id))
         # await asyncio.gather(*futures, return_exceptions=False)
 
@@ -219,17 +234,19 @@ class SQLBackend(IState):
             rows = res.fetchall()
             tasks = [Task(**dict(r)) for r in rows]
 
-        futures = []
-        for t in tasks:
-            elapsed = elapsed_time_from_start(t)
-            # print("ELAPSED: ", elapsed)
-            if elapsed > t.timeout:
-                _res = {"error": "timeout, could be running"}
-                # futures.append(
-                #    self.set_result(t.id, result=_res, status=TaskStatus.failed.value)
-                # )
-                await self.set_result(t.id, result=_res, status=TaskStatus.failed.value)
-        # await asyncio.gather(*futures, return_exceptions=True)
+        # futures = []
+        async with self.begin() as conn:
+            for t in tasks:
+                elapsed = elapsed_time_from_start(t)
+                if elapsed > t.timeout:
+                    _res = {"error": "timeout, could be running"}
+                    # futures.append(
+                    #    self.set_result(t.id, result=_res, status=TaskStatus.failed.value)
+                    # )
+                    await self._set_result(
+                        conn, t.id, result=_res, status=TaskStatus.failed.value
+                    )
+            # await asyncio.gather(*futures, return_exceptions=True)
 
     async def clean(self):
         await self._clean_done()

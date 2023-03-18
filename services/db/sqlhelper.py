@@ -40,7 +40,36 @@ async def async_vacuum(engine: AsyncEngine, table: Optional[str] = None) -> bool
     return False
 
 
-def vacuum(engine: AsyncEngine, table: Optional[str] = None) -> bool:
+async def async_pragma_wal(engine: AsyncEngine) -> bool:
+    """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
+    autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
+    pragma = None
+    if "sqlite" in engine.url:
+        pragma = "PRAGMA journal_mode=WAL"
+
+    if pragma:
+        async with autocommit.connect() as conn:
+            await conn.execute(text(pragma))
+        await autocommit.dispose()
+        return True
+    return False
+
+
+def pragma_wal(engine: Engine) -> bool:
+    """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
+    autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
+    pragma = None
+    if "sqlite" in engine.url:
+        pragma = "PRAGMA journal_mode=WAL"
+
+    if pragma:
+        with autocommit.connect() as conn:
+            conn.execute(text(pragma))
+        return True
+    return False
+
+
+def vacuum(engine: Engine, table: Optional[str] = None) -> bool:
     """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
     autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
     vacuum = None

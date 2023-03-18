@@ -8,4 +8,12 @@ from .pages import (
     get_total_table,
     get_total_table_async,
 )
-from .sqlhelper import SQL, AsyncSQL, sqlite_async_uri, vacuum, async_vacuum
+from .sqlhelper import (
+    SQL,
+    AsyncSQL,
+    sqlite_async_uri,
+    vacuum,
+    async_vacuum,
+    async_pragma_wal,
+    pragma_wal,
+)
