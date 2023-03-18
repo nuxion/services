@@ -1,7 +1,7 @@
 from sanic import Blueprint, Request
 from sanic.response import json
 {% if data.tasks -%}
-from services.workers import submit_task
+from services.workers import get_queue
 from {{ data.app_name }}.models import TaskExample
 {% endif -%}
 
@@ -17,6 +17,7 @@ async def json_handler(request: Request):
 @{{ data.app_name }}_bp.post("/worker")
 async def worker_handler(request: Request):
     t = TaskExample(do="web", wait=5)
-    task = submit_task(request, name="dummy", payload=t, qname="default")
-    return json(task.dict(), 201)
+    q = get_queue(request, qname="default")
+    task = await q.submit(name="dummy", params=t.dict())
+    return json(task.dict(exclude={'created_at', 'updated_at'}), 201)
 {% endif -%}

@@ -1,7 +1,7 @@
 import logging
 from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
 
-from sqlalchemy import MetaData, create_engine, event, inspect
+from sqlalchemy import MetaData, create_engine, event, inspect, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.engine.reflection import Inspector
 from sqlalchemy.ext.asyncio import (
@@ -17,6 +17,43 @@ from sqlalchemy.orm import Session, scoped_session, sessionmaker
 from services import types
 
 from .utils import drop_everything
+
+
+def sqlite_async_uri(filename) -> str:
+    return f"sqlite+aiosqlite:///{filename}"
+
+
+async def async_vacuum(engine: AsyncEngine, table: Optional[str] = None) -> bool:
+    """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
+    autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
+    vacuum = None
+    if "postgresql" in engine.url and table:
+        vacuum = f"VACUUM ANALYZE {table}"
+    elif "sqlite" in engine.url:
+        vacuum = "vacuum"
+
+    if vacuum:
+        async with autocommit.connect() as conn:
+            await conn.execute(text(vacuum))
+        await autocommit.dispose()
+        return True
+    return False
+
+
+def vacuum(engine: AsyncEngine, table: Optional[str] = None) -> bool:
+    """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
+    autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
+    vacuum = None
+    if "postgresql" in engine.url and table:
+        vacuum = f"VACUUM ANALYZE {table}"
+    elif "sqlite" in engine.url:
+        vacuum = "vacuum"
+
+    if vacuum:
+        with autocommit.connect() as conn:
+            conn.execute(text(vacuum))
+        return True
+    return False
 
 
 class SQL:
