@@ -29,6 +29,11 @@ async def _delete(backend: types.TasksBackend, taskid: str):
     await back.delete_task(taskid)
 
 
+async def _clean(backend: types.TasksBackend):
+    back = await workers.init_backend(backend)
+    await back.clean()
+
+
 @click.group(name="tasks")
 def tasks_cli():
     """
@@ -135,7 +140,7 @@ def list_tasks(settings_module):
     help="Fullpath to settings module",
 )
 def clean_failed_tasks(settings_module):
-    """Remove tasks in status failed"""
+    """Remove tasks in failed state"""
     settings = conf.load_conf(settings_module)
     if not settings.TASKS:
         console.print("[red bold]Not tasks backend configurated[/]")
@@ -164,3 +169,21 @@ def delete_task(settings_module, taskid):
 
     utils.from_sync2async(_delete, settings.TASKS, taskid)
     console.print(f"[red]=> {taskid} removed[/]")
+
+
+@tasks_cli.command(name="clean")
+@click.option(
+    "--settings-module",
+    "-s",
+    default=defaults.SETTINGS_MODULE,
+    help="Fullpath to settings module",
+)
+def clean_tasks(settings_module):
+    """Clean tasks done"""
+    settings = conf.load_conf(settings_module)
+    if not settings.TASKS:
+        console.print("[red bold]Not tasks backend configurated[/]")
+        sys.exit(-1)
+
+    utils.from_sync2async(_clean, settings.TASKS)
+    console.print(f"[green]=> Tasks cleaned[/]")
