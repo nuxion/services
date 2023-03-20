@@ -1,6 +1,11 @@
 from sqlalchemy import inspect
-from sqlalchemy.schema import (DropConstraint, DropTable, ForeignKeyConstraint,
-                               MetaData, Table)
+from sqlalchemy.schema import (
+    DropConstraint,
+    DropTable,
+    ForeignKeyConstraint,
+    MetaData,
+    Table,
+)
 
 
 def drop_everything(engine):
