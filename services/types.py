@@ -58,6 +58,11 @@ class MigrationType(BaseModel):
     version_table: str
 
 
+class TasksBackend(BaseModel):
+    uri: str = "sqlite+aiosqlite:///tasks.db"
+    backend_class: str = "services.ext.sql.workers.SQLBackend"
+
+
 class SecuritySettings(BaseSettings):
     JWT_PUBLIC: Optional[str] = None
     JWT_PRIVATE: Optional[str] = None
@@ -196,6 +201,7 @@ class Settings(BaseSettings):
     CUSTOM_COMMANDS: List[str] = Field(default_factory=list)
     USER_ENDPOINTS: bool = True
     USER_DB: str = "default"
+    TASKS: Optional[TasksBackend] = None
 
     APPS: List[str] = []
 

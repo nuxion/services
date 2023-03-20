@@ -50,8 +50,8 @@ class WebApp(WebAppSpec):
         self.register_auth_validator(app, "jwt", jwtauth)
         self.register_auth_validator(app, "cookie", session_auth)
         {% if data.tasks -%}
-        _back = workers.TasksBackend()
-        _q_conf = workers.QueueConfig(app_name=self.name, qname="default", backend=_back)
+        _q_conf = workers.QueueConfig(
+            app_name=self.name, qname="default", backend=settings.TASKS)
         workers.create(app, _q_conf)
         workers.TaskQueue.setup(app, _q_conf)
         {% endif -%}
@@ -80,8 +80,8 @@ class WebApp(WebAppSpec):
         self.register_auth_validator("jwt", jwtauth)
         self.init_blueprints(app)
         {% if data.tasks -%}
-        _back = workers.TasksBackend()
-        _q_conf = workers.QueueConfig(app_name=self.name, qname="default", backend=_back)
+        _q_conf = workers.QueueConfig(
+            app_name=self.name, qname="default", backend=settings.TASKS)
         workers.create(app, _q_conf)
         workers.TaskQueue.setup(app, _q_conf)
         {% endif -%}

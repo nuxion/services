@@ -234,4 +234,4 @@ def from_sync2async(func, *args, **kwargs):
     """run async functions from sync code"""
     loop = asyncio.get_event_loop()
     rsp = loop.run_until_complete(func(*args, **kwargs))
-    return
+    return rsp

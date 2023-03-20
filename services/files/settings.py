@@ -18,8 +18,6 @@ DATABASES = {
 }
 
 APPS = [
-    # "services.users.web.WebApp",
-    # "services.security.web.WebApp",
     "{{ data.app_name }}.web.WebApp",
 ]
 
@@ -31,8 +29,7 @@ SECURITY2 = types.SecurityConfig(
     )
 )
 
-{% if data.vite_enabled %}
-
+{% if data.vite_enabled -%}
 VITE_ENABLED = True
 VITE_CONFIG = types.ViteConfig(
     # Where dynamic assets in vite are configurated
@@ -59,7 +56,15 @@ STATICFILES_DIRS = [
             localdir="front/public/"
         )
 ]
-{% endif %}
+{% endif -%}
+
+{% if data.tasks -%}
+TASKS = types.TasksBackend(
+    uri="sqlite+aiosqlite:///tasks.sqlite"
+    backend_class="services.ext.sql.workers.SQLBackend"
+
+)
+{% endif -%}
 
 TEMPLATES_DIR = [
     "{{ data.app_name }}/templates"

@@ -191,7 +191,7 @@ class SQLBackend(IState):
     async def _vacuum(self):
         await async_vacuum(self.engine, self._tasks.name)
 
-    async def clean_failed(self):
+    async def clean_failed(self) -> List[str]:
         async with self.conn() as conn:
             stmt = select(self._tasks).where(
                 self._tasks.c.state == TaskStatus.failed.value
@@ -199,13 +199,18 @@ class SQLBackend(IState):
             res = await conn.execute(stmt)
             rows = res.fetchall()
             tasks = [Task(**dict(r)) for r in rows]
-        futures = []
-        for t in tasks:
-            elapsed = elapsed_time_from_finish(t)
-            if elapsed > t.result_ttl:
-                futures.append(self.delete_task(t.id))
+        # futures = []
+        tasks_ids = []
+        async with self.begin() as conn:
+            for t in tasks:
+                elapsed = elapsed_time_from_finish(t)
+                if elapsed > t.result_ttl:
+                    # futures.append(self.delete_task(t.id))
+                    await self._delete(conn, t.id)
+                    tasks_ids.append(t.id)
 
-        await asyncio.gather(*futures, return_exceptions=True)
+        # await asyncio.gather(*futures, return_exceptions=True)
+        return tasks_ids
 
     async def _clean_done(self):
         async with self.conn() as conn:

@@ -3,7 +3,7 @@ import inspect
 import json
 import logging
 import traceback
-from abc import ABC, abstractmethod, abstractclassmethod
+from abc import ABC, abstractclassmethod, abstractmethod
 from datetime import datetime
 from enum import Enum
 from functools import partial
@@ -16,15 +16,11 @@ from pydantic import BaseModel, Field
 from sanic import Sanic
 from sanic.log import LOGGING_CONFIG_DEFAULTS, logger
 
+from services.types import TasksBackend
 from services.utils import get_class, get_function, secure_random_str
 
 CTX_PREFIX = "queue_"
 WORKER_PREFIX = "Queue-"
-
-
-class TasksBackend(BaseModel):
-    uri: str = "sqlite+aiosqlite:///tasks.db"
-    backend_class: str = "services.ext.sql.workers.SQLBackend"
 
 
 class QueueConfig(BaseModel):
@@ -105,7 +101,7 @@ class IState(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    async def clean_failed(self):
+    async def clean_failed(self) -> List[str]:
         raise NotImplementedError()
 
 
@@ -148,7 +144,7 @@ def _exec_task(base_package, task: Task):
     return result
 
 
-async def _init_backend(conf: TasksBackend) -> IState:
+async def init_backend(conf: TasksBackend) -> IState:
     Cls: IState = get_class(conf.backend_class)
     backend = await Cls.from_uri(conf.uri)
     return backend
@@ -209,7 +205,7 @@ class TaskQueue:
         async def _setup_taskqueue(app: Sanic):
             back = None
             if conf.backend:
-                back = await _init_backend(conf.backend)
+                back = await init_backend(conf.backend)
             q = getattr(app.shared_ctx, f"{CTX_PREFIX}{conf.qname}")
             tq = cls(q, conf=conf, backend=back)
             setattr(app.ctx, f"{CTX_PREFIX}{conf.qname}", tq)
@@ -398,7 +394,7 @@ def standalone_cpu_worker(conf: QueueConfig, task: Task):
     result = None
     status = task.state
     if conf.backend:
-        backend = loop.run_until_complete(_init_backend(conf.backend))
+        backend = loop.run_until_complete(init_backend(conf.backend))
         loop.run_until_complete(backend.add_task(task))
     try:
         result = _exec_task(conf.app_name, task)
