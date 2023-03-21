@@ -2,6 +2,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
+from datetime import datetime
 
 from pydantic import BaseModel, BaseSettings, Field, RedisDsn
 
@@ -295,3 +296,20 @@ class Cookie(BaseModel):
     secure: bool = True
     samesite: str = "lax"
     max_age: int = Field(alias="max-age", default=60 * 60)
+
+
+class Bucket(BaseModel):
+    name: str
+    url: str
+    storage_class: str
+    location: str
+    versioning: bool = False
+    labels: Optional[Dict[str, str]] = None
+    public: bool = False
+    created_at: Optional[datetime] = None
+
+    def __repr__(self):
+        return f"<Bucket {self.name}>"
+
+    def __str__(self):
+        return f"<Bucket {self.name}>"
