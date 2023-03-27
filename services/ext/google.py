@@ -197,7 +197,12 @@ class AsyncGoogleStore(IAsyncStore):
         return cls(bucket=bucket, client=c)
 
     async def get_bucket(self) -> types.Bucket:
-        return await from_async2sync(self.client.get_bucket())
+        return await from_async2sync(self.client.get_bucket)
+
+    async def create_bucket(
+        self, opts: Optional[Dict[str, str]] = None
+    ) -> types.Bucket:
+        return await from_async2sync(self.client.create_bucket, opts)
 
     async def _current_or_get_bucket(self) -> _GoogleBucket:
         if not self.bucket:

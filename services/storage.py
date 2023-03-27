@@ -292,6 +292,16 @@ class AsyncLocal(IAsyncStore):
             created_at=datetime.utcnow(),
         )
 
+    async def get_bucket(self) -> types.Bucket:
+        return types.Bucket(
+            name=self._bucket,
+            url=self._bucket,
+            storage_class="filesystem",
+            location="local",
+            versioning=False,
+            created_at=datetime.utcnow(),
+        )
+
     async def put(self, key: str, bdata: bytes):
         uri = self.uri(key)
         mkdir_p(Path(uri).parent)

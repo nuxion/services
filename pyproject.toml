@@ -83,6 +83,11 @@ dependencies = [
   "types-redis",
   "types-aiofiles",
 ]
+
+features = [
+   "google"
+]
+
 [tool.hatch.envs.default.scripts]
 cov = "pytest --cov-report=term-missing --cov-config=pyproject.toml --cov=services --cov=tests {args}"
 no-cov = "cov --no-cov {args}"

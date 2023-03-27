@@ -185,12 +185,6 @@ def init_blueprints_legacy(app, blueprints_allowed, package_dir="services.web"):
         app.blueprint(bp)
 
 
-def get_meta_from_app(app_name) -> MetaData:
-    """TODO: move to commands"""
-    Base = get_class(f"{app_name}.db.Base")
-    return Base.metadata
-
-
 class MimeTypes(Enum):
     """common mime types used
     https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
