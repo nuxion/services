@@ -18,6 +18,9 @@ from services import defaults
 @click.option(
     "--debug", "-D", default=False, is_flag=True, help="Run in a single process"
 )
+@click.option(
+    "--storage", "-s", default=True, is_flag=True, help="With storage enabled"
+)
 @click.option("--dev", "-d", default=False, is_flag=True, help="Dev mode")
 @click.option(
     "--settings-module",
@@ -25,7 +28,9 @@ from services import defaults
     default=defaults.SETTINGS_MODULE,
     help="Fullpath to settings module",
 )
-def web_cli(host, port, workers, auto_reload, access_log, debug, dev, settings_module):
+def web_cli(
+    host, port, workers, auto_reload, access_log, debug, dev, settings_module, storage
+):
     """Run Web Server"""
     # pylint: disable=import-outside-toplevel
     from sanic import Sanic
@@ -52,8 +57,11 @@ def web_cli(host, port, workers, auto_reload, access_log, debug, dev, settings_m
     print(f"Workers: {w}")
     print(f"Listening: {host}:{port}")
     print(f"OS PID: {os.getpid()}")
+    print(f"With storage: {storage}")
 
-    loader = AppLoader(factory=partial(create_srv, settings))
+    loader = AppLoader(
+        factory=partial(create_srv, settings=settings, with_storage=storage)
+    )
     srv = loader.load()
     srv.prepare(
         host=host,

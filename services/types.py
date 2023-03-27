@@ -64,6 +64,11 @@ class TasksBackend(BaseModel):
     backend_class: str = "services.ext.sql.workers.SQLBackend"
 
 
+class Storage(BaseModel):
+    bucket: str = ".storage"
+    store_class: str = "services.storage.AsyncLocal"
+
+
 class SecuritySettings(BaseSettings):
     JWT_PUBLIC: Optional[str] = None
     JWT_PRIVATE: Optional[str] = None
@@ -215,6 +220,8 @@ class Settings(BaseSettings):
     LOGLEVEL: str = "INFO"
     LOGCONFIG: Dict[str, Any] = {}
     DEBUG: bool = False
+
+    STORAGE: Dict[str, Storage] = {"default": Storage()}
 
     # MIGRATIONS: Dict[str, Migration] = {}
 

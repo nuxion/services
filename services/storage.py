@@ -17,6 +17,8 @@ import aiofiles
 
 from services import types
 from services.utils import from_async2sync, get_class, mkdir_p
+from sanic.log import logger
+from sanic import Sanic
 
 
 def delete_file_or_dir(fpath):
@@ -363,3 +365,32 @@ class AsyncLocal(IAsyncStore):
         self, key, minutes=15, bucket=None, content_type="application/octed-stream"
     ) -> str:
         raise NotImplementedError()
+
+
+class StoreHelper:
+    def __init__(self, app: Sanic, settings: types.Settings):
+        self.app = app
+        app.config.STORAGE = settings.STORAGE
+        # app.ext.dependency(self)
+
+    async def _init_store(self, bucket: str, store_class: str) -> IAsyncStore:
+        _Store: IAsyncStore = get_class(store_class)
+        obj = await _Store.from_uri(bucket)
+        return obj
+
+    async def init_listener(self, app: Sanic):
+        app.ctx.storage = {}
+        for k, v in app.config.STORAGE.items():
+            obj = await self._init_store(v.bucket, v.store_class)
+            app.ctx.storage[k] = obj
+            logger.info("%s storage added", k)
+
+    @classmethod
+    def init_app(cls, app, settings: types.Settings) -> "StoreHelper":
+        obj = cls(app, settings)
+        app.register_listener(obj.init_listener, "after_server_start")
+        app.ext.dependency(obj)
+        return obj
+
+    def get_storage(self, name="default") -> IAsyncStore:
+        return self.app.ctx.storage[name]
