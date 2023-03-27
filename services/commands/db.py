@@ -4,6 +4,12 @@ from rich.prompt import Prompt
 from services import conf, defaults, types, utils
 from services.db import Migration
 from services.db.sqlhelper import SQL
+from sqlalchemy.sql.schema import MetaData
+
+
+def get_meta_from_app(app_name) -> MetaData:
+    Base = utils.get_class(f"{app_name}.db.Base")
+    return Base.metadata
 
 
 @click.group(name="db")
@@ -28,7 +34,7 @@ def create(app_name, db, settings_module):
     settings = conf.load_conf(settings_module)
 
     db = SQL(settings.DATABASES[db])
-    db.create_all(utils.get_meta_from_app(app_name))
+    db.create_all(get_meta_from_app(app_name))
 
 
 @db_cli.command()
@@ -45,7 +51,7 @@ def drop(app_name, db, settings_module):
     settings = conf.load_conf(settings_module)
 
     db = SQL(settings.DATABASES[db])
-    db.drop_all(utils.get_meta_from_app(app_name))
+    db.drop_all(get_meta_from_app(app_name))
 
 
 @db_cli.command()

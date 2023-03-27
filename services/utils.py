@@ -12,7 +12,8 @@ from importlib import import_module
 from pathlib import Path
 from typing import Callable
 
-from sqlalchemy.sql.schema import MetaData
+import aiofiles
+from sanic import Request
 
 from services import __about__
 from services.errors import CommandExecutionException
@@ -185,12 +186,6 @@ def init_blueprints_legacy(app, blueprints_allowed, package_dir="services.web"):
         app.blueprint(bp)
 
 
-def get_meta_from_app(app_name) -> MetaData:
-    """TODO: move to commands"""
-    Base = get_class(f"{app_name}.db.Base")
-    return Base.metadata
-
-
 class MimeTypes(Enum):
     """common mime types used
     https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
@@ -235,3 +230,43 @@ def from_sync2async(func, *args, **kwargs):
     loop = asyncio.get_event_loop()
     rsp = loop.run_until_complete(func(*args, **kwargs))
     return rsp
+
+
+async def stream_reader(request: Request):
+    """
+    It's a wrapper to be used to yield response from a stream
+    to another stream.
+    it's used with project upload data to stream upload zip directly to
+    the fileserver instead of load data in memory.
+    """
+    while True:
+        body = await request.stream.read()
+        if body is None:
+            break
+        yield body
+
+
+def binary_file_reader(fp: str, chunk_size=1024):
+    """
+    File reader generator mostly used for projects upload
+    """
+    with open(fp, "rb") as f:
+        while True:
+            data = f.read(chunk_size)
+            if not data:
+                break
+            yield data
+
+
+async def async_binary_reader(fp: str, chunk_size=1024):
+    """
+    It should be used as:
+    async for chunk in async_binary_reader(fp):
+        print(chunk)
+    """
+    async with aiofiles.open(fp, "rb") as f:
+        while True:
+            data = await f.read(chunk_size)
+            if not data:
+                break
+            yield data
