@@ -10,7 +10,7 @@ from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.sql import functions
 
-from services.db import async_vacuum, async_pragma_wal
+from services.db import async_vacuum, async_set_pragma
 from services.workers import (
     IState,
     Task,
@@ -63,7 +63,7 @@ class SQLBackend(IState):
         _wal = extra.get("wal", True)
         engine = create_async_engine(uri, echo=_echo)
         if _wal:
-            await async_pragma_wal(engine)
+            await async_set_pragma(engine)
 
         obj = cls(engine, table_state=_table)
         await obj.create_all()

@@ -14,6 +14,6 @@ from .sqlhelper import (
     sqlite_async_uri,
     vacuum,
     async_vacuum,
-    async_pragma_wal,
-    pragma_wal,
+    async_set_pragma,
+    set_pragma,
 )

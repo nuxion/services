@@ -49,7 +49,7 @@ class LoginView(HTTPMethodView):
                 username=request.form.get("username"),
                 password=request.form.get("password"),
             )
-            async with db.with_session(request) as session:
+            async with db.session() as session:
                 user = await um.authenticate(
                     session, username=creds.username, to_verify=creds.password
                 )
@@ -73,7 +73,7 @@ class RegisterView(HTTPMethodView):
                 username=request.form.get("username"),
                 password=request.form.get("password"),
             )
-            async with db.with_session(request) as session:
+            async with db.session() as session:
                 user = await um.authenticate(
                     session, username=creds.username, to_verify=creds.password
                 )
