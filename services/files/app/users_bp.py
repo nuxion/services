@@ -21,7 +21,7 @@ async def login_handler(request: Request, um: UserManager, auth: JWTAuth, db: DB
     # session = db.get_session(request)
     try:
         creds = UserLogin(**request.json)
-        async with db.with_session(request) as session:
+        async with db.session() as session:
             user = await um.authenticate(
                 session, username=creds.username, to_verify=creds.password
             )

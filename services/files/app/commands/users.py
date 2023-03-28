@@ -23,62 +23,51 @@ def get_user_manager(settings: types.Settings) -> UserManager:
     gm = GroupManager()
     um = UserManager(salt=settings.SECURITY2.secret_key, groups=gm)
 
-    # session = db.sessionmaker()
-    # manager = UserManager(
-    #    auth, db=db, model_class=settings.USER_MODEL, salt=settings.SECURITY.AUTH_SALT
-    # )
     return um
 
 
-async def get_db(settings: types.Settings):
-    db = AsyncSQL(settings.DATABASES[settings.USER_DB])
-    await db.init()
-    # S = db.sessionmaker()
-    # s = S()
+def get_db(settings: types.Settings):
+    db = AsyncSQL.from_conf(settings.DATABASES[settings.USER_DB])
     return db
 
 
 async def _create_group(
     settings: types.Settings, group_name
 ) -> Union[GroupModel, None]:
-    db = await get_db(settings)
+    db = get_db(settings)
     manager = get_user_manager(settings)
-    async with db.session_factory() as session:
+    async with db.session() as session:
         group = await manager.create_group(session, group_name)
-    await db.dispose()
+    # await db.dispose()
     return group
 
 
 async def _create_user(settings: types.Settings, data, group) -> Union[UserModel, None]:
-    db = await get_db(settings)
+    db = get_db(settings)
     manager = get_user_manager(settings)
     try:
-        async with db.session_factory() as session:
+        async with db.session() as session:
             user = await manager.register(session, data, default_group=group)
     except errors.GroupNotFound as e:
         console.print(f"[bold red]{e}[/]")
         return None
 
-    await db.dispose()
     return user
 
 
 async def _delete_user(settings: types.Settings, username, hard=False):
-    db = await get_db(settings)
+    db = get_db(settings)
     manager = get_user_manager(settings)
-    async with db.session_factory() as session:
+    async with db.session() as session:
         await manager.delete(session, username, hard)
         await session.commit()
 
-    await db.dispose()
-
 
 async def _list_users(settings: types.Settings, is_active=True):
-    db = await get_db(settings)
+    db = get_db(settings)
     manager = get_user_manager(settings)
-    async with db.session_factory() as session:
+    async with db.session() as session:
         users = await manager.list(session, is_active=is_active)
-    await db.dispose()
     return users
 
 
@@ -152,7 +141,7 @@ def user_create(settings_module, is_superuser, scopes, group, create_group):
 @click.argument("username")
 def user_delete(settings_module, hard, username):
     settings = conf.load_conf(settings_module)
-    result = loop.run_until_complete(_delete_user(settings, username, hard=hard))
+    loop.run_until_complete(_delete_user(settings, username, hard=hard))
     console.print(f"[bold magenta]User {username} deleted")
 
 

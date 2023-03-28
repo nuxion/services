@@ -1,14 +1,10 @@
+import contextlib
 import logging
-from typing import Any, Callable, Coroutine, Dict, List, Optional, Union
+from typing import Any, Callable, Coroutine, List, Optional
 
 from sqlalchemy import MetaData, create_engine, event, inspect, text
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.engine.reflection import Inspector
-from sqlalchemy.ext.asyncio import (
-    AsyncSession,
-    async_scoped_session,
-    create_async_engine,
-)
+from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 # from sqlalchemy.dialects.postgresql.base import PGInspector
@@ -26,45 +22,47 @@ def sqlite_async_uri(filename) -> str:
 async def async_vacuum(engine: AsyncEngine, table: Optional[str] = None) -> bool:
     """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
     autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
-    vacuum = None
-    if "postgresql" in engine.url and table:
-        vacuum = f"VACUUM ANALYZE {table}"
-    elif "sqlite" in engine.url:
-        vacuum = "vacuum"
+    _vacuum = None
+    url = str(engine.url)
+    if "postgresql" in url and table:
+        _vacuum = f"VACUUM ANALYZE {table}"
+    elif "sqlite" in url:
+        _vacuum = "vacuum"
 
-    if vacuum:
+    if _vacuum:
         async with autocommit.connect() as conn:
-            await conn.execute(text(vacuum))
+            await conn.execute(text(_vacuum))
         await autocommit.dispose()
         return True
     return False
 
 
-async def async_pragma_wal(engine: AsyncEngine) -> bool:
+async def async_set_pragma(engine: AsyncEngine, pragma="journal_mode=WAL") -> bool:
     """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
     autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
-    pragma = None
-    if "sqlite" in engine.url:
-        pragma = "PRAGMA journal_mode=WAL"
-
-    if pragma:
+    _pragma = None
+    url = str(engine.url)
+    if "sqlite" in url:
+        _pragma = f"PRAGMA {pragma}"
+    if _pragma:
         async with autocommit.connect() as conn:
-            await conn.execute(text(pragma))
+            await conn.execute(text(_pragma))
         await autocommit.dispose()
         return True
     return False
 
 
-def pragma_wal(engine: Engine) -> bool:
+def set_pragma(engine: Engine, pragma="journal_mode=WAL") -> bool:
     """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
     autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
-    pragma = None
-    if "sqlite" in engine.url:
-        pragma = "PRAGMA journal_mode=WAL"
+    _pragma = None
+    url = str(engine.url)
+    if "sqlite" in url:
+        _pragma = f"PRAGMA {pragma}"
 
-    if pragma:
+    if _pragma:
         with autocommit.connect() as conn:
-            conn.execute(text(pragma))
+            conn.execute(text(_pragma))
         return True
     return False
 
@@ -72,27 +70,23 @@ def pragma_wal(engine: Engine) -> bool:
 def vacuum(engine: Engine, table: Optional[str] = None) -> bool:
     """https://github.com/sqlalchemy/sqlalchemy/discussions/6959"""
     autocommit = engine.execution_options(isolation_level="AUTOCOMMIT")
-    vacuum = None
-    if "postgresql" in engine.url and table:
-        vacuum = f"VACUUM ANALYZE {table}"
-    elif "sqlite" in engine.url:
-        vacuum = "vacuum"
+    _vacuum = None
+    url = str(engine.url)
+    if "postgresql" in url and table:
+        _vacuum = f"VACUUM ANALYZE {table}"
+    elif "sqlite" in url:
+        _vacuum = "vacuum"
 
-    if vacuum:
+    if _vacuum:
         with autocommit.connect() as conn:
-            conn.execute(text(vacuum))
+            conn.execute(text(_vacuum))
         return True
     return False
 
 
 class SQL:
     def __init__(
-        self,
-        db: types.Database,
-        set_session_factory=True,
-        autoflush=True,
-        init_engine=True,
-        future=True,
+        self, db: types.Database, engine: Engine, autoflush=True, expire_on_commit=False
     ):
         """SQL sync helper to build connections and sessions
         it's prepared to be used with Core and ORM
@@ -101,35 +95,59 @@ class SQL:
         :type db: services.types.Database
         """
         self.conf = db
-        self._future = future
         self._autoflush = autoflush
-        if init_engine:
-            self._init(session_factory=set_session_factory)
+        self._engine = engine
+        self._session = sessionmaker(self._engine, expire_on_commit=expire_on_commit)
 
-    @classmethod
-    def from_uri(cls, uri: str, init_engine=True) -> "SQL":
-        _db = types.Database(sync_url=uri)
-        return cls(_db, init_engine=init_engine)
-
-    def _init(self, session_factory=True):
-        if "sqlite" in self.conf.sync_url.split("://", maxsplit=1)[0]:
-            self._engine = create_engine(self.conf.sync_url, echo=self.conf.debug)
+    @staticmethod
+    def create_engine(conf: types.Database) -> Engine:
+        if "sqlite" in conf.sync_url.split("://", maxsplit=1)[0]:
+            engine = create_engine(conf.sync_url, echo=conf.debug)
         else:
-            self._engine = create_engine(
-                self.conf.sync_url,
-                pool_size=self.conf.pool_size,
-                max_overflow=self.conf.max_overflow,
-                echo=self.conf.debug,
+            engine = create_engine(
+                conf.sync_url,
+                pool_size=conf.pool_size,
+                max_overflow=conf.max_overflow,
+                echo=conf.debug,
             )
-
-        if session_factory:
-            self._factory = self.sessionmaker(
-                autoflush=self._autoflush, future=self._future
-            )
+        return engine
 
     @property
     def engine(self) -> Engine:
         return self._engine
+
+    @property
+    def session(self) -> sessionmaker:
+        """
+        It's a session factory it should be used as:
+
+        .. code:
+
+            with db.session() as session:
+                session.execute(...)
+
+        """
+        return self._session
+
+    @classmethod
+    def from_uri(cls, uri: str, autoflush=True, expire_on_commit=False) -> "SQL":
+        _db = types.Database(async_url=uri)
+        engine = cls.create_engine(_db)
+        obj = cls(
+            _db, engine=engine, autoflush=autoflush, expire_on_commit=expire_on_commit
+        )
+        # await obj.init()
+        return obj
+
+    @classmethod
+    def from_conf(
+        cls, db: types.Database, autoflush=True, expire_on_commit=False
+    ) -> "SQL":
+        engine = cls.create_engine(db)
+        obj = cls(
+            db, engine=engine, autoflush=autoflush, expire_on_commit=expire_on_commit
+        )
+        return obj
 
     def create_all(self, meta: MetaData):
         """
@@ -163,32 +181,9 @@ class SQL:
     def add_event(self, func: Callable, type_event="connect"):
         event.listen(self.engine, type_event, func)
 
-    def sessionmaker(self, autoflush=True, future=True) -> sessionmaker:
-        """wrapper around SqlAlchemy sessionmaker
-
-        :param future: default True then Query 2.0 style
-        """
-        return sessionmaker(bind=self.engine, autoflush=autoflush, future=future)
-
-    def session_factory(self) -> Session:
+    def session_factory(self, expire_on_commit=False) -> sessionmaker:
         """it's actually returns a session"""
-        return self._factory()
-
-    def scoped_session(self, autoflush=True, future=True) -> Session:
-        """wrapper around SqlAlchemy session_scoped
-
-        Create a single scoped_session registry when the web application
-        first starts, ensuring that this object is accessible by the
-        rest of the application.
-
-        ensures that scoped_session.remove() is called when the web
-        request ends.
-
-        :param future: default True then Query 2.0 style
-        """
-        return scoped_session(
-            sessionmaker(bind=self.engine, autoflush=autoflush, future=future)
-        )
+        return sessionmaker(self.engine, expire_on_commit=expire_on_commit)
 
 
 class AsyncSQL:
@@ -203,55 +198,105 @@ class AsyncSQL:
     # Meta = MetaData()
 
     def __init__(
-        self, db: types.Database, set_session_factory=True, autoflush=True, future=True
+        self,
+        db: types.Database,
+        engine: AsyncEngine,
+        autoflush=True,
+        expire_on_commit=False,
     ):
         self.conf = db
-        self._future = future
         self._autoflush = autoflush
-        self._set_session_factory = set_session_factory
+        self._engine = engine
+        self._async_session = async_sessionmaker(
+            self._engine, expire_on_commit=expire_on_commit
+        )
 
-    async def init(self):
-        if "sqlite" in self.conf.async_url.split("://", maxsplit=1)[0]:
-            self._engine = create_async_engine(
-                self.conf.async_url, echo=self.conf.debug
-            )
+    @property
+    def async_session(self) -> async_sessionmaker[AsyncSession]:
+        """
+        It's a session factory it should be used as:
+
+        .. code:
+
+            async with db.async_session() as session:
+                await session.execute(...)
+
+        """
+        return self._async_session
+
+    @staticmethod
+    def create_engine(conf: types.Database) -> AsyncEngine:
+        if "sqlite" in conf.async_url.split("://", maxsplit=1)[0]:
+            engine = create_async_engine(conf.async_url, echo=conf.debug)
         else:
-            self._engine = create_async_engine(
-                self.conf.async_url,
-                pool_size=self.conf.pool_size,
-                max_overflow=self.conf.max_overflow,
-                echo=self.conf.debug,
+            engine = create_async_engine(
+                conf.async_url,
+                pool_size=conf.pool_size,
+                max_overflow=conf.max_overflow,
+                echo=conf.debug,
             )
 
-        if self._set_session_factory:
-            self._factory = self.sessionmaker(
-                autoflush=self._autoflush, future=self._future
-            )
+        return engine
 
     @classmethod
-    async def from_uri(cls, uri: str) -> "AsyncSQL":
+    def from_uri(cls, uri: str, autoflush=True, expire_on_commit=False) -> "AsyncSQL":
         _db = types.Database(async_url=uri)
-        obj = cls(_db)
-        await obj.init()
+        engine = cls.create_engine(_db)
+        obj = cls(
+            _db, engine=engine, autoflush=autoflush, expire_on_commit=expire_on_commit
+        )
+        # await obj.init()
+        return obj
 
-    def sessionmaker(
-        self, autoflush=True, future=True, expire_on_commit=False
-    ) -> sessionmaker:
+    @classmethod
+    def from_conf(
+        cls, db: types.Database, autoflush=True, expire_on_commit=False
+    ) -> "AsyncSQL":
+        engine = cls.create_engine(db)
+        obj = cls(
+            db, engine=engine, autoflush=autoflush, expire_on_commit=expire_on_commit
+        )
+        return obj
+
+    @contextlib.asynccontextmanager
+    async def conn(self):
+        try:
+            async with self._engine.connect() as conn:
+                yield conn
+        finally:
+            await self._engine.dispose()
+
+    @contextlib.asynccontextmanager
+    async def begin(self):
+        try:
+            async with self._engine.begin() as conn:
+                yield conn
+        finally:
+            await self._engine.dispose()
+
+    @contextlib.asynccontextmanager
+    async def session(self):
+        try:
+            async with self.async_session() as session:
+                yield session
+        finally:
+            await self._engine.dispose()
+
+    def session_factory(
+        self, autoflush=True, expire_on_commit=False
+    ) -> async_sessionmaker:
         """
         expire_on_commit=False will prevent attributes from being expired
         after commit
         """
-        return sessionmaker(
+        return async_sessionmaker(
             self._engine,
-            future=future,
             autoflush=autoflush,
             expire_on_commit=expire_on_commit,
-            class_=AsyncSession,
         )
 
-    def session_factory(self) -> AsyncSession:
-        """it's actually returns a session"""
-        return self._factory()
+    def add_event(self, func: Callable, type_event="connect"):
+        event.listen(self.engine.sync_engine, type_event, func)
 
     @property
     def engine(self) -> AsyncEngine:
@@ -268,9 +313,9 @@ class AsyncSQL:
     async def drop_all(self, meta: Optional[MetaData] = None, all_=True):
         async with self._engine.begin() as conn:
             if all_:
-                await conn.run_sync(lambda sync_conn: drop_everything(sync_conn))
+                await conn.run_sync(drop_everything, self.engine)
             elif meta:
-                await conn.run_sync(lambda sync_conn: meta.drop_all(sync_conn))
+                await conn.run_sync(meta.drop_all)
             else:
                 raise AttributeError("MetaData object or all_ param should be provided")
 

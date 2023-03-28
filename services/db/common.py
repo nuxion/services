@@ -61,7 +61,6 @@ def compile_integer_sqlite(type_, compiler, **kw):
 
 @declarative_mixin
 class CommonMixin:
-    __mapper_args__ = {"eager_defaults": True}
     id = Column(BigInteger, primary_key=True)
     created_at = Column(
         DateTime(),
