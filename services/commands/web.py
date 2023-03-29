@@ -60,7 +60,7 @@ def web_cli(
     print(f"With storage: {storage}")
 
     loader = AppLoader(
-        factory=partial(create_srv, settings=settings, with_storage=storage)
+        factory=partial(create_srv, settings=settings)
     )
     srv = loader.load()
     srv.prepare(

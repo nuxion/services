@@ -39,12 +39,19 @@ console = Console()
     help="Add DB related files",
 )
 @click.option(
+    "--storage",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Add default storage",
+)
+@click.option(
     "--name",
     default=None,
     help="Name of the project, if empty it will ask you for a name",
 )
 @click.argument("base_path")
-def create_service_project(base_path, name, vite, users, tasks, sql):
+def create_service_project(base_path, name, vite, users, tasks, sql, storage):
     """Start a new project"""
     root = Path(base_path).resolve()
     opts = init_script.ScriptOpts(
@@ -55,6 +62,7 @@ def create_service_project(base_path, name, vite, users, tasks, sql):
         vite_enabled=vite,
         tasks=tasks,
         sql=sql,
+        storage=storage,
     )
     print(opts)
 

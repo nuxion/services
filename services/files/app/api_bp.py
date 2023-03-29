@@ -2,9 +2,11 @@ from sanic import Blueprint, Request
 from sanic.response import json
 {% if data.tasks -%}
 from services.workers import get_queue
-from services.storage import StoreHelper
 from services.utils import stream_reader
 from {{ data.app_name }}.models import TaskExample
+{% endif -%}
+{% if data.storage -%}
+from services.storage import Storage
 {% endif -%}
 
 {{ data.app_name }}_bp = Blueprint("{{ data.app_name }}", url_prefix="{{ data.app_name }}", version="v1")
@@ -24,9 +26,10 @@ async def worker_handler(request: Request):
     return json(task.dict(exclude={'created_at', 'updated_at'}), 201)
 {% endif -%}
 
+{% if data.storage -%}
 @{{ data.app_name }}_bp.post("/_/upload/<filename:str>", stream=True)
-async def upload_example(request, filename, store: StoreHelper):
+async def upload_example(request, filename, store: Storage):
     _store = store.get_storage(name="default")
     await _store.put_stream(filename, stream_reader(request))
     return json(dict(msg="ok"), 200)
-    
+{% endif -%}

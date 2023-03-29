@@ -19,6 +19,7 @@ class ScriptOpts(BaseModel):
     vite_enabled: bool = False
     users: bool = True
     tasks: bool = False
+    storage: bool = False
     sql: bool = True
 
 
