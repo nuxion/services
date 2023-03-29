@@ -1,5 +1,4 @@
 import sys
-
 from services import defaults, types
 
 # WARNING:
@@ -9,14 +8,6 @@ from services import defaults, types
 # stored in those machines.
 
 # General Folders for the server
-SECURITY = types.SecuritySettings(
-    JWT_SECRET="Changeme",
-    JWT_ALG="HS256",
-    AUTH_SALT="Changeme",
-)
-
-USER_MODEL = "example.models.UserModel"
-
 DATABASES = {
     "default": types.Database(
         name="default",
@@ -27,12 +18,16 @@ DATABASES = {
 }
 
 APPS = [
-    # "services.users.web.WebApp",
-    "services.security.web.WebApp",
     "example.web.WebApp",
 ]
 
-
+SECURITY2 = types.SecurityConfig(
+    secret_key="qzaWO-gCnGp5LPKNdSpz0iVTmyoopxxNNmnjtgB61qk",
+    jwt=types.JWTConfig(
+        alg="HS256",
+        secret="qzaWO-gCnGp5LPKNdSpz0iVTmyoopxxNNmnjtgB61qk"
+    )
+)
 
 VITE_ENABLED = True
 VITE_CONFIG = types.ViteConfig(
@@ -53,8 +48,18 @@ VITE_CONFIG = types.ViteConfig(
     VITE_BASE="/"
 )
 
+STATICFILES_DIRS = [
+        types.StaticDir(
+            name="public",
+            uripath="",
+            localdir="front/public/"
+        )
+]
+STORAGE = types.Storage(
+    bucket=".storage"
+    store_class="services.storage.AsyncLocal"
 
-
+)
 TEMPLATES_DIR = [
     "example/templates"
 ]
