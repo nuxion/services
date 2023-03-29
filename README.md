@@ -16,12 +16,14 @@ good established libraries and technologies.
 
 - Async Web sever (Sanic)
 - Generation code for apps (like Django)
-- Multiple databases support (sync and async using SQLAlchemy 1.4/2.0)
+- Multiple databases support (sync and async using SQLAlchemy 2.0)
 - Schema migration tools pre-configurated to work in the first run (Alembic)
 - OpenApi/Swagger docs generation (Sanic)
 - Simple user system and authentication endpoints
 - JWT support
 - Vite support
+- Simple tasks implementations
+- Storage implementation for uploading files (local and google storage)
 
 
 ## Quickstart
@@ -56,23 +58,27 @@ It will ask you for a name for the firts app.
 
 Then your folder will be:
 
-```
+```console
  » tree -a -L 2
 .
 ├── alembic.ini
-├── server_conf
+├── example
 │   ├── __init__.py
 │   ├── __pycache__
-│   └── settings.py
-└── test_app
+│   ├── api
+│   ├── commands
+│   ├── db.py
+│   ├── managers.py
+│   ├── migrations
+│   ├── models.py
+│   ├── tasks.py
+│   ├── templates
+│   ├── users_models.py
+│   ├── views.py
+│   └── web.py
+└── server_conf
     ├── __init__.py
-    ├── __pycache__
-    ├── db.py
-    ├── migrations
-    ├── models.py
-    ├── users_bp.py
-    ├── views_bp.py
-    └── web.py
+    └── settings.py
 ```
 
 Finally, the last step if you want to use the User system provided in the code, you will need to run a revision and upgrade action:
@@ -88,7 +94,7 @@ Note: srv db uses alembic under the hood and Alembic is configurated in a way th
 
 ## Status
 
-:warning: The library is being in use in one project, but it is still under active development and therefore full backward compatibility is not guaranteed before reaching v1.0.0.
+:warning: The library is being in use in some production projects, but it is still under active development and therefore full backward compatibility is not guaranteed before reaching v1.0.0.
 
 
 ## Roadmap:
@@ -100,7 +106,8 @@ Note: srv db uses alembic under the hood and Alembic is configurated in a way th
 - [x] Custom commands hooks in `srv` 
 - [ ] Dev env files {Makefile, Dockerfile, docker-compose, etc}
 - [ ] Task Queue abstraction {Redis, Google Cloud Pub/Sub, etc}
-- [ ] File upload abstraction? (TBD)
+- [x] Simple task system implemented
+- [x] File upload (local and google storage)
 - [ ] OAuth 2.0 integration
 - [ ] documentation (guides and reference api)
 - [ ] Tools and abstraction for logging (stdout, google cloud log, etc)
