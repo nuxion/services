@@ -11,8 +11,7 @@ from services.redis_conn import create_pool
 from services.templates import Render
 from services.types import Settings
 from services.utils import get_class, get_version
-from services.security.web import Authenticator
-from services.storage import StoreHelper
+from services import storage
 
 version = get_version()
 
@@ -41,7 +40,6 @@ def create_srv(
     create_redis=create_pool,
     with_status_handler=True,
     auth_enabled=True,
-    with_storage=True,
     init_db_func: Callable = init_db,
 ) -> Sanic:
     """Factory pattern like flask"""
@@ -94,7 +92,7 @@ def create_srv(
     if with_status_handler:
         app.add_route(status_handler, "/status", name="status")
 
-    if with_storage:
-        _ = StoreHelper.init_app(app, settings)
+    if settings.STORAGE:
+        storage.init_app(app, settings)
 
     return app

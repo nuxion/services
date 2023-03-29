@@ -367,15 +367,18 @@ class AsyncLocal(IAsyncStore):
         raise NotImplementedError()
 
 
-class StoreHelper:
-    def __init__(self, app: Sanic, settings: types.Settings):
+class Storage:
+    def __init__(self, app: Sanic, settings: types.Settings, create_bucket=False):
         self.app = app
         app.config.STORAGE = settings.STORAGE
+        self._create_bucket = create_bucket
         # app.ext.dependency(self)
 
     async def _init_store(self, bucket: str, store_class: str) -> IAsyncStore:
         _Store: IAsyncStore = get_class(store_class)
-        obj = await _Store.from_uri(bucket)
+        obj: IAsyncStore = await _Store.from_uri(bucket)
+        if self._create_bucket:
+            await obj.create_bucket()
         return obj
 
     async def init_listener(self, app: Sanic):
@@ -385,12 +388,18 @@ class StoreHelper:
             app.ctx.storage[k] = obj
             logger.info("%s storage added", k)
 
-    @classmethod
-    def init_app(cls, app, settings: types.Settings) -> "StoreHelper":
-        obj = cls(app, settings)
-        app.register_listener(obj.init_listener, "after_server_start")
-        app.ext.dependency(obj)
-        return obj
+    # @classmethod
+    # def init_app(cls, app, settings: types.Settings) -> "Storage":
+    #     obj = cls(app, settings)
+    #     app.register_listener(obj.init_listener, "after_server_start")
+    #     app.ext.dependency(obj)
+    #     return obj
 
     def get_storage(self, name="default") -> IAsyncStore:
         return self.app.ctx.storage[name]
+
+
+def init_app(app, settings: types.Settings, create_bucket=False):
+    s = Storage(app, settings, create_bucket=create_bucket)
+    app.register_listener(s.init_listener, "after_server_start")
+    app.ext.dependency(s)
