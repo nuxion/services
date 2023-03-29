@@ -9,6 +9,7 @@ from rich.prompt import Confirm, Prompt
 
 from services.jt import render_to_file
 from services.utils import get_package_dir, get_parent_folder, mkdir_p, normalize_name
+from services.errors import CommandExecutionException
 
 
 class ScriptOpts(BaseModel):
@@ -18,6 +19,7 @@ class ScriptOpts(BaseModel):
     vite_enabled: bool = False
     users: bool = True
     tasks: bool = False
+    sql: bool = True
 
 
 console = Console()
@@ -119,8 +121,7 @@ def create_app(opts: ScriptOpts):
         template="app/api_bp.py", dst=f"{dst}/api/{opts.app_name}.py", data=data
     )
     render_to_file(template="app/views.py", dst=f"{dst}/views.py", data=data)
-    render_to_file(template="app/models.py", dst=f"{dst}/models.py", data=data)
-    render_to_file(template="app/db.py", dst=f"{dst}/db.py", data=data)
+
     shutil.copy(
         f"{get_package_dir('services')}/files/index.html",
         f"{opts.base_path}/{opts.app_name}/templates/index.html",
@@ -136,13 +137,18 @@ def create_app(opts: ScriptOpts):
             f"{opts.base_path}/{opts.app_name}/templates/_layout.html",
         )
 
-    alembic_files(str(opts.base_path), opts.app_name)
+    if opts.sql:
+        add_sql_files(opts)
 
     if opts.tasks:
         render_to_file(template="app/tasks.py", dst=f"{dst}/tasks.py", data=data)
 
-    if opts.users:
+    if opts.users and opts.sql:
         users_feature(opts)
+    elif opts.users and not opts.sql:
+        raise CommandExecutionException(
+            "To use the users feature you have to enable the sql feature."
+        )
 
 
 def users_feature(opts: ScriptOpts):
@@ -182,6 +188,17 @@ def add_command(name, opts: ScriptOpts):
     )
 
 
+def add_sql_files(opts: ScriptOpts):
+    dst = f"{opts.base_path}/{opts.app_name}"
+    data = opts.dict()
+
+    if not Path(f"{opts.base_path}/alembic.ini").is_file():
+        render_to_file(template="app/alembic.ini", dst=f"{opts.base_path}/alembic.ini")
+    render_to_file(template="app/models.py", dst=f"{dst}/models.py", data=data)
+    render_to_file(template="app/db.py", dst=f"{dst}/db.py", data=data)
+    alembic_files(str(opts.base_path), opts.app_name)
+
+
 def create_project(opts: ScriptOpts):
     """
     Entrypoint when calling `srv startproject .`
@@ -196,7 +213,8 @@ def create_project(opts: ScriptOpts):
     if not Path(f"{opts.base_path}/server_conf").is_dir():
         create_settings(opts)
 
-    render_to_file(template="app/alembic.ini", dst=f"{opts.base_path}/alembic.ini")
+    if opts.sql:
+        render_to_file(template="app/alembic.ini", dst=f"{opts.base_path}/alembic.ini")
 
     create_app(opts)
 

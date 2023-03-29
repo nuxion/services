@@ -32,12 +32,19 @@ console = Console()
     help="Add a dummy task and the worker as example",
 )
 @click.option(
+    "--sql",
+    default=True,
+    is_flag=True,
+    show_default=True,
+    help="Add DB related files",
+)
+@click.option(
     "--name",
     default=None,
     help="Name of the project, if empty it will ask you for a name",
 )
 @click.argument("base_path")
-def create_service_project(base_path, name, vite, users, tasks):
+def create_service_project(base_path, name, vite, users, tasks, sql):
     """Start a new project"""
     root = Path(base_path).resolve()
     opts = init_script.ScriptOpts(
@@ -47,6 +54,7 @@ def create_service_project(base_path, name, vite, users, tasks):
         users=users,
         vite_enabled=vite,
         tasks=tasks,
+        sql=sql,
     )
     print(opts)
 

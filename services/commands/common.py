@@ -32,8 +32,15 @@ console = Console()
     show_default=True,
     help="Add a dummy task and the worker as example",
 )
+@click.option(
+    "--sql",
+    default=True,
+    is_flag=True,
+    show_default=True,
+    help="Add DB related files",
+)
 @click.argument("appname")
-def create_app_cli(appname, vite, tasks, users):
+def create_app_cli(appname, vite, tasks, users, sql):
     """Create the structure of an app"""
     root = Path.cwd()
     opts = init_script.ScriptOpts(
@@ -43,6 +50,7 @@ def create_app_cli(appname, vite, tasks, users):
         users=users,
         vite_enabled=vite,
         tasks=tasks,
+        sql=sql,
     )
     init_script.create_app(opts)
     console.print(f"[green bold]App {appname} created.[/]")
