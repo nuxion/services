@@ -33,7 +33,7 @@ def create(app_name, db, settings_module):
     """creates database schemas"""
     settings = conf.load_conf(settings_module)
 
-    db = SQL(settings.DATABASES[db])
+    db = SQL.from_conf(settings.DATABASES[db])
     db.create_all(get_meta_from_app(app_name))
 
 
@@ -50,7 +50,7 @@ def drop(app_name, db, settings_module):
     """drop database schemas"""
     settings = conf.load_conf(settings_module)
 
-    db = SQL(settings.DATABASES[db])
+    db = SQL.from_conf(settings.DATABASES[db])
     db.drop_all(get_meta_from_app(app_name))
 
 

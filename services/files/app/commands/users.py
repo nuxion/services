@@ -86,7 +86,9 @@ def users_cli():
     default=defaults.SETTINGS_MODULE,
     help="Fullpath to settings module",
 )
-@click.option("--is-superuser", "-S", default=False, help="Is a superuser")
+@click.option(
+    "--is-superuser", "-S", default=False, is_flag=True, help="Is a superuser"
+)
 @click.option("--group", "-g", default="users", help="Group which belongs")
 @click.option(
     "--create-group", default=True, is_flag=True, help="Creates group if not exist"
@@ -168,7 +170,7 @@ def users_list(settings_module):
         table.add_row(
             f"{user.id}",
             user.username,
-            ",".join(user.scopes),
+            user.scopes,
             f"{user.email}",
             f"{user.is_superuser}",
             f"{user.created_at}",
