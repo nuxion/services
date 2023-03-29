@@ -221,7 +221,7 @@ class Settings(BaseSettings):
     LOGCONFIG: Dict[str, Any] = {}
     DEBUG: bool = False
 
-    STORAGE: Dict[str, Storage] = {"default": Storage()}
+    STORAGE: Optional[Dict[str, Storage]] = None
 
     # MIGRATIONS: Dict[str, Migration] = {}
 
