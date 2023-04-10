@@ -67,11 +67,11 @@ TASKS = types.TasksBackend(
 {% endif -%}
 
 {% if data.storage -%}
-STORAGE = types.Storage(
-    bucket=".storage"
-    store_class="services.storage.AsyncLocal"
-
-)
+STORAGE = {
+    "default": types.Storage(
+        bucket=".storage", store_class="services.storage.AsyncLocal"
+    )
+}
 {% endif -%}
 
 
