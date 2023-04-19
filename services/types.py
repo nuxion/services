@@ -1,8 +1,8 @@
 import os
 from dataclasses import dataclass
+from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Union
-from datetime import datetime
 
 from pydantic import BaseModel, BaseSettings, Field, RedisDsn
 
@@ -164,7 +164,7 @@ class JWTPayload(BaseModel):
     iss: Optional[str] = None
     sub: Optional[str] = None
     aud: Optional[str] = None
-    custom: Dict[str, Any] = Field(default_factory=dict)
+    custom: Dict[str, Any] = Field(default={})
 
 
 class JWTConfig(BaseModel):
@@ -183,11 +183,11 @@ class JWTConfig(BaseModel):
 
 
 class SecurityConfig(BaseModel):
-    secret_key: str = Field(default_factory=os.urandom(16).hex)
+    secret_key: str
     jwt: Optional[JWTConfig] = None
     session: Optional[str] = None
     token_store_uri: str = "sqlite+aiosqlite:///:memory:"
-    authenticators: List[str] = Field(default_factory=list)
+    authenticators: List[str] = Field([])
     ttl_refresh_token: int = 3600 * 168  # 7 days
     domain: str = "localhost"
 
@@ -199,12 +199,12 @@ class Settings(BaseSettings):
     DATABASES: Dict[str, Database] = {}
     REDIS: Optional[RedisDsn] = None
     REDIS_POOL_SIZE: int = 10
-    TEMPLATES_DIR: List[str] = Field(default_factory=list)
+    TEMPLATES_DIR: List[str] = []
     TEMPLATES_PACKAGE_NAME: Optional[str] = None
     DEV_MODE: bool = False
-    SECURITY2: SecurityConfig = Field(default_factory=SecurityConfig)
-    AUTHENTICATORS: List[str] = Field(default_factory=list)
-    CUSTOM_COMMANDS: List[str] = Field(default_factory=list)
+    SECURITY: SecurityConfig = SecurityConfig(secret_key=os.urandom(16).hex())
+    AUTHENTICATORS: List[str] = []
+    CUSTOM_COMMANDS: List[str] = []
     USER_ENDPOINTS: bool = True
     USER_DB: str = "default"
     TASKS: Optional[TasksBackend] = None
@@ -213,7 +213,7 @@ class Settings(BaseSettings):
 
     # web
     STATIC_URL: str = ""
-    STATICFILES_DIRS: List[StaticDir] = Field(default_factory=list)
+    STATICFILES_DIRS: List[StaticDir] = Field([])
     VITE_ENABLED: bool = False
     VITE_CONFIG: ViteConfig = ViteConfig()
     # logs
@@ -225,13 +225,14 @@ class Settings(BaseSettings):
 
     # MIGRATIONS: Dict[str, Migration] = {}
 
-    CORS_ORIGINS: Union[List, str] = "*"
-    CORS_ALLOW_HEADERS: Union[List, str] = "*"
+    CORS_ORIGINS: Union[List[str], str] = "*"
+    CORS_ALLOW_HEADERS: Union[List[str], str] = "*"
     SANIC_APP_NAME = defaults.SANIC_APP
     SETTINGS_MODULE: Optional[str] = None
 
     class Config:
         env_prefix = "SRV_"
+        smart_union = True
 
 
 class UserLogin(BaseModel):
@@ -274,9 +275,9 @@ class HtmlData(BaseModel):
     # navbar: List[MenuOption]
     ctx: Dict[str, Any]
     title: str
-    content: Dict[str, Any] = Field(default_factory=dict)
+    content: Dict[str, Any] = Field({})
     lang: str = "en"
-    meta: DefaultMeta = Field(default_factory=DefaultMeta)
+    meta: DefaultMeta = Field(DefaultMeta())
     og: Optional[OGMeta] = None
 
 

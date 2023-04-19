@@ -21,7 +21,7 @@ APPS = [
     "{{ data.app_name }}.web.WebApp",
 ]
 
-SECURITY2 = types.SecurityConfig(
+SECURITY = types.SecurityConfig(
     secret_key="{{ data.secret_key }}",
     jwt=types.JWTConfig(
         alg="HS256",

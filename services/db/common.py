@@ -72,6 +72,7 @@ class CommonMixin:
         DateTime(),
         server_default=functions.now(),
         nullable=False,
+        onupdate=functions.now(),
     )
 
 

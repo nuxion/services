@@ -87,10 +87,12 @@ dependencies = [
   "types-redis",
   "types-aiofiles",
   "httpx",
+  "psycopg[binary,pool]~=3.1.8"
 ]
 
 features = [
-   "google"
+   "google",
+   "sql"
 ]
 
 [tool.hatch.envs.default.scripts]
