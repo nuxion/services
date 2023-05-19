@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="{{ data.lang }}">
+  <head>
+    <title>{% block title %}{{ data.title }}{% endblock title %}</title>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta http-equiv="content-type" content="text/html; charset=utf-8">
+    <meta charset="utf-8">
+    {% block meta -%}
+    {% for key, value in data.meta.dict().items() -%}
+    {% if value -%}
+    <meta name="{{ key }}" content="{{ value }}">
+    {% endif -%}
+    {% endfor -%}
+    {% endblock meta -%}
+    {% vite_asset "main.js" %}
+  </head>
+  <body class="antialiased bg-white dark:bg-gray-900 h-full">
+    {% block menu -%}
+    <nav class="menu">
+      <ul>
+        <li><a href="/">Home</a></li>
+        {% if data.content.username %}
+        <li><a href="{{ url_for ('web.logout_handler') }}">Logout</a></li>
+        {% else %}
+        <li><a href="{{ url_for ('web.LoginView') }}">Login</a></li>
+        {% endif %}
+      </ul>
+    </nav>
+    {% endblock menu -%}
+    {% block content -%}
+    {% endblock content -%}
+
+    {% block scripts -%}
+    {% vite_dev %}
+    {% endblock scripts %}
+
+    {% if conf.DEBUG %}
+    {{ conf }}
+    {% endif %}
+  </body>
+</html>

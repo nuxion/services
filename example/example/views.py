@@ -3,11 +3,9 @@ from sanic.response import html, redirect
 from sanic.views import HTTPMethodView
 from sanic_ext import openapi
 
-{% if data.users -%}
 from services.db.plugin import DBHelper
 from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security.sessionauth import SessionAuth
-{% endif -%}
 from services.shortcuts import async_render
 from services.types import HtmlData, UserLogin
 
@@ -16,9 +14,8 @@ from .managers import UserManager
 web_bp = Blueprint("web")
 
 def new_data(content):
-    return HtmlData(ctx={"DEV": True}, title="{{ data.app_name }}", content=content)
+    return HtmlData(ctx={"DEV": True}, title="example", content=content)
 
-{% if data.users -%}
 @web_bp.get("/")
 @openapi.exclude()
 async def default_handler(request: Request, auth: SessionAuth):
@@ -87,10 +84,3 @@ class RegisterView(HTTPMethodView):
 
 
 web_bp.add_route(LoginView.as_view(), "/login")
-{% else %}
-@web_bp.get("/")
-@openapi.exclude()
-async def default_handler(request: Request):
-    return text("Hello world")
-
-{% endif -%}

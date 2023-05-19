@@ -18,7 +18,7 @@ DATABASES = {
 }
 
 APPS = [
-    "test_app.web.WebApp",
+    "example.web.WebApp",
 ]
 
 SECURITY = types.SecurityConfig(
@@ -56,5 +56,5 @@ STATICFILES_DIRS = [
         )
 ]
 TEMPLATES_DIR = [
-    "test_app/templates"
+    "example/templates"
 ]
