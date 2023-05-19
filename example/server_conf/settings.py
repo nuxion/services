@@ -1,5 +1,4 @@
 import sys
-import os
 from services import defaults, types
 
 # WARNING:
@@ -15,24 +14,19 @@ DATABASES = {
         async_url="sqlite+aiosqlite:///db.sqlite",
         sync_url="sqlite:///db.sqlite",
         description="Default database",
-    ),
-    "postgres": types.Database(
-        name="postgres",
-        async_url=f"postgresql+psycopg://{os.getenv('PSQL_URL')}",
-        sync_url=f"postgresql+psycopg://{os.getenv('PSQL_URL')}",
-        description="Postgres database",
-    ),
+    )
 }
 
 APPS = [
-    "example.web.WebApp",
+    "test_app.web.WebApp",
 ]
 
 SECURITY = types.SecurityConfig(
-    secret_key="qzaWO-gCnGp5LPKNdSpz0iVTmyoopxxNNmnjtgB61qk",
+    secret_key="mJggKEgWYrh0BOKhR5pniycJGx-i1TjhTUmZqTy06WI",
     jwt=types.JWTConfig(
-        alg="HS256", secret="qzaWO-gCnGp5LPKNdSpz0iVTmyoopxxNNmnjtgB61qk"
-    ),
+        alg="HS256",
+        secret="mJggKEgWYrh0BOKhR5pniycJGx-i1TjhTUmZqTy06WI"
+    )
 )
 
 VITE_ENABLED = True
@@ -51,16 +45,16 @@ VITE_CONFIG = types.ViteConfig(
     VITE_REACT_MODE=False,
     # base url in the vite server the same as
     #    https://vitejs.dev/config/server-options.html#server-base
-    VITE_BASE="/",
+    VITE_BASE="/"
 )
 
 STATICFILES_DIRS = [
-    types.StaticDir(name="public", uripath="", localdir="front/public/")
+        types.StaticDir(
+            name="public",
+            uripath="",
+            localdir="front/public/"
+        )
 ]
-
-STORAGE = {
-    "default": types.Storage(
-        bucket=".storage", store_class="services.storage.AsyncLocal"
-    )
-}
-TEMPLATES_DIR = ["example/templates"]
+TEMPLATES_DIR = [
+    "test_app/templates"
+]
