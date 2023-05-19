@@ -40,14 +40,14 @@ class TaskStatus(str, Enum):
 
 class Task(BaseModel):
     name: str
-    params: Dict[str, Any] = Field(default_factory=dict)
-    id: str = Field(default_factory=secure_random_str)
+    params: Dict[str, Any] = Field(default={})
+    id: str = Field(default=secure_random_str())
     state: str = TaskStatus.created
     app_name: str = "test"
     timeout: int = 10
     result_ttl: int = 120
-    created_at: datetime = Field(default_factory=datetime.utcnow)
-    updated_at: datetime = Field(default_factory=datetime.utcnow)
+    created_at: datetime = Field(default=datetime.utcnow())
+    updated_at: datetime = Field(default=datetime.utcnow())
 
     class Config:
         use_enum_values = True

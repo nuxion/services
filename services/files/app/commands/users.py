@@ -21,7 +21,7 @@ loop = asyncio.get_event_loop()
 def get_user_manager(settings: types.Settings) -> UserManager:
     # auth = auth_from_settings(settings.SECURITY)
     gm = GroupManager()
-    um = UserManager(salt=settings.SECURITY2.secret_key, groups=gm)
+    um = UserManager(salt=settings.SECURITY.secret_key, groups=gm)
 
     return um
 

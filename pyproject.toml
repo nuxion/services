@@ -29,9 +29,9 @@ dependencies = [
     "rich>=12",
     "cryptography>=39.0.1",
     "PyJWT>=2.6.0",
-    "pydantic==1",
-    "sanic~=22.12.0",
-    "sanic-ext~=22.12.0",
+    "pydantic~=1.10.7",
+    "sanic~=23.3.0",
+    "sanic-ext~=23.3.0",
     "redis~=4.5.1",
     "itsdangerous~=2.1.2",
     "aiofiles<23,>=22.1.0", # needed for jupyterlab

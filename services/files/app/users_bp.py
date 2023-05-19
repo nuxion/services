@@ -7,6 +7,7 @@ from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security import protected
 from services.security.jwtauth import JWTAuth
 from services.types import JWTPayload, JWTResponse, UserLogin
+from services import utils
 
 from ..managers import UserManager
 
@@ -14,7 +15,7 @@ users_bp = Blueprint("users", url_prefix="users", version="v1")
 
 
 @users_bp.post("/login")
-@openapi.response(200, {"application/json": JWTResponse})
+@openapi.response(200, {"application/json": utils.to_schema(JWTResponse)})
 @openapi.response(403, dict(msg=str), "Not Found")
 @openapi.body(UserLogin)
 async def login_handler(request: Request, um: UserManager, auth: JWTAuth, db: DBHelper):
@@ -35,15 +36,15 @@ async def login_handler(request: Request, um: UserManager, auth: JWTAuth, db: DB
 
 
 @users_bp.get("/verify")
-@openapi.response(200, {"application/json": JWTResponse})
+@openapi.response(200, {"application/json": utils.to_schema(JWTResponse)})
 @protected(validators=["jwt"])
 async def verify_handler(request: Request):
     return json(request.ctx.token_data, 200)
 
 
 @users_bp.post("/refresh_token")
-@openapi.response(200, {"application/json": JWTResponse})
-@openapi.body(JWTResponse)
+@openapi.response(200, {"application/json": utils.to_schema(JWTResponse)})
+@openapi.body({"application/json": utils.to_schema(JWTResponse)})
 async def refresh_handler(request, auth: JWTAuth):
     if not request.app.config.JWT_ALLOW_REFRESH:
         return json(dict(msg="Not found"), 404)

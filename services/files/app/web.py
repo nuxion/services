@@ -35,7 +35,7 @@ class WebApp(WebAppSpec):
         """
         settings = self.get_app_settings(app)
         gm = GroupManager()
-        um = UserManager(salt=settings.SECURITY2.secret_key, groups=gm)
+        um = UserManager(salt=settings.SECURITY.secret_key, groups=gm)
         app.ext.dependency(um)
         db = self.get_db(app, settings.USER_DB)
 
@@ -43,10 +43,10 @@ class WebApp(WebAppSpec):
         """ complete with your own logic """
         app.register_listener(self.hook_users, "before_server_start")
         app.register_listener(self.hook_users, "before_server_start")
-        store = MemoryTokenStore(settings.SECURITY2)
-        jwtauth = JWTAuth(settings.SECURITY2, store)
-        session_auth = SessionAuth(settings.SECURITY2, secure=False)
-        app.config.JWT_ALLOW_REFRESH = settings.SECURITY2.jwt.allow_refresh_token
+        store = MemoryTokenStore(settings.SECURITY)
+        jwtauth = JWTAuth(settings.SECURITY, store)
+        session_auth = SessionAuth(settings.SECURITY, secure=False)
+        app.config.JWT_ALLOW_REFRESH = settings.SECURITY.jwt.allow_refresh_token
         self.register_auth_validator(app, "jwt", jwtauth)
         self.register_auth_validator(app, "cookie", session_auth)
         {% if data.tasks -%}
@@ -74,9 +74,9 @@ class WebApp(WebAppSpec):
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
 
-        store = MemoryTokenStore(settings.SECURITY2)
-        jwtauth = JWTAuth(settings.SECURITY2, store)
-        app.config.JWT_ALLOW_REFRESH = settings.SECURITY2.jwt.allow_refresh_token
+        store = MemoryTokenStore(settings.SECURITY)
+        jwtauth = JWTAuth(settings.SECURITY, store)
+        app.config.JWT_ALLOW_REFRESH = settings.SECURITY.jwt.allow_refresh_token
         self.register_auth_validator("jwt", jwtauth)
         self.init_blueprints(app)
         {% if data.tasks -%}

@@ -18,6 +18,9 @@ from sanic import Request
 from services import __about__
 from services.errors import CommandExecutionException
 
+# from sanic_ext import openapi
+
+
 _filename_ascii_strip_re = re.compile(r"[^A-Za-z0-9_.-]")
 _windows_device_files = (
     "CON",
@@ -270,3 +273,13 @@ async def async_binary_reader(fp: str, chunk_size=1024):
             if not data:
                 break
             yield data
+
+
+def to_schema(model_def):
+    """
+    Based on
+    https://github.com/sanic-org/sanic-ext/issues/152
+    It converts a pydantic model into a compatible schema for openapi
+    """
+    # openapi.component(model_def)
+    return model_def.schema(ref_template="#/components/schemas/{model}")
