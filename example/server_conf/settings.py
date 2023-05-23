@@ -22,10 +22,10 @@ APPS = [
 ]
 
 SECURITY = types.SecurityConfig(
-    secret_key="mJggKEgWYrh0BOKhR5pniycJGx-i1TjhTUmZqTy06WI",
+    secret_key="XZjaFt2uNRpAJYNz4yEseLg0yN7a8xJ7tmY_KNUiJ44",
     jwt=types.JWTConfig(
         alg="HS256",
-        secret="mJggKEgWYrh0BOKhR5pniycJGx-i1TjhTUmZqTy06WI"
+        secret="XZjaFt2uNRpAJYNz4yEseLg0yN7a8xJ7tmY_KNUiJ44"
     )
 )
 
