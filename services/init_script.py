@@ -7,9 +7,9 @@ from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Confirm, Prompt
 
+from services.errors import CommandExecutionException
 from services.jt import render_to_file
 from services.utils import get_package_dir, get_parent_folder, mkdir_p, normalize_name
-from services.errors import CommandExecutionException
 
 
 class ScriptOpts(BaseModel):
@@ -17,10 +17,11 @@ class ScriptOpts(BaseModel):
     secret_key: str
     app_name: Optional[str] = None
     vite_enabled: bool = False
-    users: bool = True
+    users: bool = False
     tasks: bool = False
     storage: bool = False
-    sql: bool = True
+    sql: bool = False
+    html: bool = False
 
 
 console = Console()
@@ -81,7 +82,7 @@ def final_words(opts: ScriptOpts):
         )
 
 
-def alembic_files(root, app_name):
+def _alembic_files(root, app_name):
     # alembic specific
     dst = f"{root}/{app_name}"
     mkdir_p(f"{dst}/migrations/versions")
@@ -105,23 +106,34 @@ def alembic_files(root, app_name):
         )
 
 
-def create_app(opts: ScriptOpts):
-    """
-    It creates an app. Similar to django apps.
-    """
+def _users_feature(opts: ScriptOpts):
     dst = f"{opts.base_path}/{opts.app_name}"
-    mkdir_p(f"{dst}/api")
-    mkdir_p(f"{dst}/templates")
-    mkdir_p(f"{dst}/commands")
-
     data = opts.dict()
-    # creates and generates app's package files
-    _empty_file(f"{dst}/__init__.py")
-    render_to_file(template="app/web.py", dst=f"{dst}/web.py", data=data)
+    render_to_file(template="app/users_bp.py", dst=f"{dst}/api/users.py", data=data)
     render_to_file(
-        template="app/api_bp.py", dst=f"{dst}/api/{opts.app_name}.py", data=data
+        template="app/users_models.py", dst=f"{dst}/users_models.py", data=data
     )
-    render_to_file(template="app/views.py", dst=f"{dst}/views.py", data=data)
+
+    render_to_file(template="app/managers.py", dst=f"{dst}/managers.py", data=data)
+    render_to_file(
+        template="app/commands/users.py", dst=f"{dst}/commands/users.py", data=data
+    )
+
+    if opts.html:
+        shutil.copy(
+            f"{get_package_dir('services')}/files/login.html",
+            f"{opts.base_path}/{opts.app_name}/templates/login.html",
+        )
+
+
+def _html_feature(opts: ScriptOpts, from_new: bool):
+    dst = f"{opts.base_path}/{opts.app_name}"
+    mkdir_p(f"{dst}/templates")
+    data = opts.dict()
+    if from_new:
+        render_to_file(template="app/views.py", dst=f"{dst}/views.py", data=data)
+    else:
+        render_to_file(template="app/views_by_app.py", dst=f"{dst}/views.py", data=data)
 
     shutil.copy(
         f"{get_package_dir('services')}/files/index.html",
@@ -138,38 +150,6 @@ def create_app(opts: ScriptOpts):
             f"{opts.base_path}/{opts.app_name}/templates/_layout.html",
         )
 
-    if opts.sql:
-        add_sql_files(opts)
-
-    if opts.tasks:
-        render_to_file(template="app/tasks.py", dst=f"{dst}/tasks.py", data=data)
-
-    if opts.users and opts.sql:
-        users_feature(opts)
-    elif opts.users and not opts.sql:
-        raise CommandExecutionException(
-            "To use the users feature you have to enable the sql feature."
-        )
-
-
-def users_feature(opts: ScriptOpts):
-    dst = f"{opts.base_path}/{opts.app_name}"
-    data = opts.dict()
-    render_to_file(template="app/users_bp.py", dst=f"{dst}/api/users.py", data=data)
-    render_to_file(
-        template="app/users_models.py", dst=f"{dst}/users_models.py", data=data
-    )
-
-    render_to_file(template="app/managers.py", dst=f"{dst}/managers.py", data=data)
-    render_to_file(
-        template="app/commands/users.py", dst=f"{dst}/commands/users.py", data=data
-    )
-
-    shutil.copy(
-        f"{get_package_dir('services')}/files/login.html",
-        f"{opts.base_path}/{opts.app_name}/templates/login.html",
-    )
-
 
 def create_settings(opts: ScriptOpts):
     mkdir_p(f"{opts.base_path}/server_conf")
@@ -181,7 +161,7 @@ def create_settings(opts: ScriptOpts):
     )
 
 
-def add_command(name, opts: ScriptOpts):
+def _add_command(name, opts: ScriptOpts):
     dst = f"{opts.base_path}/{opts.app_name}"
     data = opts.dict()
     render_to_file(
@@ -189,7 +169,7 @@ def add_command(name, opts: ScriptOpts):
     )
 
 
-def add_sql_files(opts: ScriptOpts):
+def _sql_feature(opts: ScriptOpts):
     dst = f"{opts.base_path}/{opts.app_name}"
     data = opts.dict()
 
@@ -197,7 +177,43 @@ def add_sql_files(opts: ScriptOpts):
         render_to_file(template="app/alembic.ini", dst=f"{opts.base_path}/alembic.ini")
     render_to_file(template="app/models.py", dst=f"{dst}/models.py", data=data)
     render_to_file(template="app/db.py", dst=f"{dst}/db.py", data=data)
-    alembic_files(str(opts.base_path), opts.app_name)
+    _alembic_files(str(opts.base_path), opts.app_name)
+
+
+def create_app(opts: ScriptOpts, from_new=False):
+    """
+    It creates an app. Similar to django apps.
+
+    `from_new` param is related to if is the first time that an
+    app is created, then it will a use a default `views.py` file.
+    Else, if it is being created after the project, it uses
+    `views_by_app.py`.
+    """
+    dst = f"{opts.base_path}/{opts.app_name}"
+    mkdir_p(f"{dst}/api")
+    mkdir_p(f"{dst}/commands")
+
+    data = opts.dict()
+    # creates and generates app's package files
+    _empty_file(f"{dst}/__init__.py")
+    render_to_file(template="app/web.py", dst=f"{dst}/web.py", data=data)
+    render_to_file(
+        template="app/api_bp.py", dst=f"{dst}/api/{opts.app_name}.py", data=data
+    )
+    if opts.html:
+        _html_feature(opts, from_new)
+    if opts.sql:
+        _sql_feature(opts)
+
+    if opts.tasks:
+        render_to_file(template="app/tasks.py", dst=f"{dst}/tasks.py", data=data)
+
+    if opts.users and opts.sql:
+        _users_feature(opts)
+    elif opts.users and not opts.sql:
+        raise CommandExecutionException(
+            "To use the users feature you have to enable the sql feature."
+        )
 
 
 def create_project(opts: ScriptOpts):
@@ -219,6 +235,6 @@ def create_project(opts: ScriptOpts):
 
     create_app(opts)
 
-    add_command("shell", opts)
+    _add_command("shell", opts)
 
     final_words(opts)

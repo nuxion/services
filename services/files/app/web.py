@@ -10,11 +10,12 @@ from services.types import Settings
 from services import workers
 {% endif -%}
 
+{% if data.html -%}
 web = ViewSet(
     blueprints=["views"],
     package="{{ data.app_name }}"
 )
-
+{% endif -%}
 {% if data.users %}
 # from services.users import UserManager
 from .managers import UserManager, GroupManager
@@ -27,8 +28,11 @@ api = ViewSet(
 
 class WebApp(WebAppSpec):
     name = "{{ data.app_name }}"
+    {% if data.html -%}
     views = [api, web]
-
+    {% else %}
+    views = [api]
+    {% endif -%}
     def hook_users(self, app: Sanic):
         """
         delete if you don't want to use the pre-built user system
@@ -69,7 +73,11 @@ api = ViewSet(
 
 class WebApp(WebAppSpec):
     name = "{{ data.app_name }}"
+    {% if data.html -%}
     views = [api, web]
+    {% else %}
+    views = [api]
+    {% endif -%}
 
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
@@ -77,7 +85,7 @@ class WebApp(WebAppSpec):
         store = MemoryTokenStore(settings.SECURITY)
         jwtauth = JWTAuth(settings.SECURITY, store)
         app.config.JWT_ALLOW_REFRESH = settings.SECURITY.jwt.allow_refresh_token
-        self.register_auth_validator("jwt", jwtauth)
+        self.register_auth_validator(app, "jwt", jwtauth)
         self.init_blueprints(app)
         {% if data.tasks -%}
         _q_conf = workers.QueueConfig(

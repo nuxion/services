@@ -1,5 +1,10 @@
 import time
-from .models import TaskExample
+from pydantic import BaseModel
+
+
+class TaskExample(BaseModel):
+    do: str
+    wait: int
 
 
 def dummy(t: TaskExample):

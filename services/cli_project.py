@@ -11,39 +11,46 @@ console = Console()
 
 @click.command()
 @click.option(
-    "--vite",
+    "--vite/--no-vite",
     default=False,
     is_flag=True,
     show_default=True,
-    help="Get support for Vite",
+    help="Get support for Vite, HTML feature should be enabled",
 )
 @click.option(
-    "--users",
+    "--html/--no-html",
+    default=False,
+    is_flag=True,
+    show_default=True,
+    help="Add a index view example and templates",
+)
+@click.option(
+    "--users/--no-users",
     default=False,
     is_flag=True,
     show_default=True,
     help="Provide the user system",
 )
 @click.option(
-    "--tasks",
+    "--tasks/--no-tasks",
     default=False,
     is_flag=True,
     show_default=True,
     help="Add a dummy task and the worker as example",
 )
 @click.option(
-    "--sql",
-    default=True,
+    "--sql/--no-sql",
+    default=False,
     is_flag=True,
     show_default=True,
     help="Add DB related files",
 )
 @click.option(
-    "--storage",
+    "--storage/--no-storage",
     default=False,
     is_flag=True,
     show_default=True,
-    help="Add default storage",
+    help="Add a default storage",
 )
 @click.option(
     "--name",
@@ -51,7 +58,7 @@ console = Console()
     help="Name of the project, if empty it will ask you for a name",
 )
 @click.argument("base_path")
-def create_service_project(base_path, name, vite, users, tasks, sql, storage):
+def create_service_project(base_path, name, vite, html, users, tasks, sql, storage):
     """Start a new project"""
     root = Path(base_path).resolve()
     opts = init_script.ScriptOpts(
@@ -63,6 +70,7 @@ def create_service_project(base_path, name, vite, users, tasks, sql, storage):
         tasks=tasks,
         sql=sql,
         storage=storage,
+        html=html,
     )
     print(opts)
 
