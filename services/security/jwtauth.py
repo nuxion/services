@@ -10,7 +10,7 @@ from services.security.utils import get_delta
 
 
 class JWTAuth(IAuth):
-    def __init__(self, conf: types.SecurityConfig, store: ITokenStore):
+    def __init__(self, conf: types.SecurityConfig, store: Optional[ITokenStore] = None):
         """
         It is a wrapper around jwt which produces jwt tokens.
         By default it will add a "exp" claim, other claims.

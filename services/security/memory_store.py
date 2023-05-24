@@ -6,7 +6,7 @@ from services.security.base import ITokenStore
 
 
 class MemoryTokenStore(ITokenStore[dict]):
-    def __init__(self, conf: types.SecurityConfig):
+    def __init__(self, conf: types.SecurityConfig, driver={}):
         self.conf = conf
         self.data: Dict[str, str] = {}
 
