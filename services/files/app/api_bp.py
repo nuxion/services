@@ -2,11 +2,11 @@ from sanic import Blueprint, Request
 from sanic.response import json
 {% if data.tasks -%}
 from services.workers import get_queue
-from services.utils import stream_reader
-from {{ data.app_name }}.models import TaskExample
+from {{ data.app_name }}.tasks import TaskExample
 {% endif -%}
 {% if data.storage -%}
 from services.storage import Storage
+from services.utils import stream_reader
 {% endif -%}
 
 {{ data.app_name }}_bp = Blueprint("{{ data.app_name }}", url_prefix="{{ data.app_name }}", version="v1")

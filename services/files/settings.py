@@ -60,7 +60,7 @@ STATICFILES_DIRS = [
 
 {% if data.tasks -%}
 TASKS = types.TasksBackend(
-    uri="sqlite+aiosqlite:///tasks.sqlite"
+    uri="sqlite+aiosqlite:///tasks.sqlite",
     backend_class="services.ext.sql.workers.SQLBackend"
 
 )

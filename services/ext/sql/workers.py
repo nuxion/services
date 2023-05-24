@@ -1,21 +1,31 @@
-import asyncio
 import contextlib
-from typing import Any, List, Dict
 from datetime import datetime
 from functools import partial
+from typing import Any, Dict, List
 
-from sqlalchemy import JSON, Column, DateTime, Integer, MetaData, String, Table, text
+from sqlalchemy import (
+    JSON,
+    Column,
+    DateTime,
+    Integer,
+    MetaData,
+    String,
+    Table,
+)
 from sqlalchemy import delete as sqldelete
 from sqlalchemy import select, update
+from sqlalchemy.exc import OperationalError
 from sqlalchemy.ext.asyncio import AsyncEngine, create_async_engine
 from sqlalchemy.sql import functions
 
-from services.db import async_vacuum, async_set_pragma
+from services.db import async_set_pragma, async_vacuum
+
+# from services.db.utils import CreateTableIfNotExists
 from services.workers import (
     IState,
     Task,
-    elapsed_time_from_finish,
     TaskStatus,
+    elapsed_time_from_finish,
     elapsed_time_from_start,
 )
 
@@ -53,11 +63,17 @@ class SQLBackend(IState):
             await self.engine.dispose()
 
     async def create_all(self):
+        # f = partial(CreateTableIfNotExists, self._tasks)
+        f = partial(self.meta.create_all, checkfirst=True)
         async with self.engine.begin() as conn:
-            await conn.run_sync(self.meta.create_all)
+            # await conn.run_sync(self.meta.create_all)
+            try:
+                await conn.run_sync(f)
+            except OperationalError:
+                pass
 
     @classmethod
-    async def from_uri(cls, uri: str, extra: Dict[str, Any] = {}) -> IState:
+    async def from_uri(cls, uri: str, extra: Dict[str, Any] = {}) -> "IState":
         _echo = extra.get("echo", False)
         _table = extra.get("table_state", "tasks_state")
         _wal = extra.get("wal", True)
