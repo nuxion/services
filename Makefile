@@ -54,8 +54,7 @@ test:
 
 .PHONY: docs-server
 docs-serve:
-	sphinx-autobuild docs docs/_build/html --port 9292 --watch ./
-
+	hatch run docs:watch 
 
 redis:
 	docker run --rm -p 6379:6379 redis:6.2
