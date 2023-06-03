@@ -46,7 +46,6 @@ class WebApp(WebAppSpec):
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
         app.register_listener(self.hook_users, "before_server_start")
-        app.register_listener(self.hook_users, "before_server_start")
         store = MemoryTokenStore(settings.SECURITY)
         jwtauth = JWTAuth(settings.SECURITY, store)
         session_auth = SessionAuth(settings.SECURITY, secure=False)
