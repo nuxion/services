@@ -3,7 +3,7 @@ from sanic.response import html, redirect
 from sanic.views import HTTPMethodView
 from sanic_ext import openapi
 
-from services.db.plugin import DBHelper
+from services.db.web import DBHelper
 from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security.sessionauth import SessionAuth
 from services.shortcuts import async_render
@@ -11,7 +11,7 @@ from services.types import HtmlData, UserLogin
 
 from .managers import UserManager
 
-web_bp = Blueprint("web")
+web_bp = Blueprint("web_example", url_prefix="/example")
 
 def new_data(content):
     return HtmlData(ctx={"DEV": True}, title="example", content=content)

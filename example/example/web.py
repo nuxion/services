@@ -6,6 +6,7 @@ from services.security.jwtauth import JWTAuth
 from services.security.sessionauth import SessionAuth
 from services.security.memory_store import MemoryTokenStore
 from services.types import Settings
+from services import workers
 web = ViewSet(
     blueprints=["views"],
     package="example"
@@ -36,13 +37,16 @@ class WebApp(WebAppSpec):
     def init(self, app: Sanic, settings: Settings):
         """ complete with your own logic """
         app.register_listener(self.hook_users, "before_server_start")
-        app.register_listener(self.hook_users, "before_server_start")
         store = MemoryTokenStore(settings.SECURITY)
         jwtauth = JWTAuth(settings.SECURITY, store)
         session_auth = SessionAuth(settings.SECURITY, secure=False)
         app.config.JWT_ALLOW_REFRESH = settings.SECURITY.jwt.allow_refresh_token
         self.register_auth_validator(app, "jwt", jwtauth)
         self.register_auth_validator(app, "cookie", session_auth)
+        _q_conf = workers.QueueConfig(
+            app_name=self.name, qname="default", backend=settings.TASKS)
+        workers.create(app, _q_conf)
+        workers.TaskQueue.setup(app, _q_conf)
         # worker = Dummy(proc_name="DummyWorker")
         # worker.init_app(app)
 
