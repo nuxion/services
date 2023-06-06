@@ -22,7 +22,6 @@ def _execute_cmd(cmd) -> str:
     with subprocess.Popen(
         cmd.split(), stdout=subprocess.PIPE, stderr=subprocess.PIPE
     ) as p:
-
         out, err = p.communicate()
         if err:
             raise AttributeError(err.decode())
@@ -43,7 +42,7 @@ def define_base_path() -> str:
     return base_path
 
 
-def load_conf(settings_module=None) -> Settings:
+def load_conf(settings_module=None, default_module=GLOBAL_MODULE) -> Settings:
     """
     It loads the settings modules in the following order of priority:
 
@@ -53,8 +52,7 @@ def load_conf(settings_module=None) -> Settings:
 
     """
     if not settings_module:
-        settings_module = os.getenv(
-            defaults.SETTINGS_MODULE_VAR, DEFAULT_MODULE)
+        settings_module = os.getenv(defaults.SETTINGS_MODULE_VAR, default_module)
     module_loaded = settings_module
     base_path = define_base_path()
     sys.path.insert(0, base_path)

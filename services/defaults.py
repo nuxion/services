@@ -5,3 +5,8 @@ SETTINGS_MODULE = "server_conf.settings"
 SETTINGS_MODULE_VAR = "SRV_SETTINGS_MODULE"
 SUPER_USER_GROUP = "root"
 GOOGLE_AUTH_ENV = "GOOGLE_APPLICATION_CREDENTIALS"
+FEATURE_COMMAND = {
+    "web": "",
+    "sql": "",
+    "tasks": "",
+}

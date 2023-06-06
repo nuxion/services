@@ -22,6 +22,7 @@ class ScriptOpts(BaseModel):
     storage: bool = False
     sql: bool = False
     html: bool = False
+    web: bool = True
 
 
 console = Console()
@@ -47,14 +48,14 @@ def ask_webapp_name(project_name: Optional[str] = None) -> str:
         parent = get_parent_folder()
         _default = normalize_name(parent)
         project_name = Prompt.ask(
-            f"Write a name for default web app [yellow]please, avoid spaces and capital "
+            f"Write a name for this app [yellow]please, avoid spaces and capital "
             "letters[/yellow]: ",
             default=_default,
         )
 
     name = normalize_name(project_name)
     console.print(
-        f"The final name for the project is: [bold magenta]{name}[/bold magenta]"
+        f"The final name for this app is: [bold magenta]{name}[/bold magenta]"
     )
     return name
 
@@ -67,11 +68,12 @@ def final_words(opts: ScriptOpts):
     )
     console.print(p)
 
-    console.print(
-        " [bold magenta]To test if everything is working "
-        " you can run the following command:[/]\n"
-    )
-    console.print("\t[bold] srv web -L[/]\n")
+    if opts.web:
+        console.print(
+            " [bold magenta]To test if everything is working "
+            " you can run the following command:[/]\n"
+        )
+        console.print("\t[bold] srv web -L[/]\n")
 
     if opts.vite_enabled:
         console.print(
@@ -190,16 +192,18 @@ def create_app(opts: ScriptOpts, from_new=False):
     `views_by_app.py`.
     """
     dst = f"{opts.base_path}/{opts.app_name}"
-    mkdir_p(f"{dst}/api")
+    if opts.web:
+        mkdir_p(f"{dst}/api")
     mkdir_p(f"{dst}/commands")
 
     data = opts.dict()
     # creates and generates app's package files
     _empty_file(f"{dst}/__init__.py")
-    render_to_file(template="app/web.py", dst=f"{dst}/web.py", data=data)
-    render_to_file(
-        template="app/api_bp.py", dst=f"{dst}/api/{opts.app_name}.py", data=data
-    )
+    if opts.web:
+        render_to_file(template="app/web.py", dst=f"{dst}/web.py", data=data)
+        render_to_file(
+            template="app/api_bp.py", dst=f"{dst}/api/{opts.app_name}.py", data=data
+        )
     if opts.html:
         _html_feature(opts, from_new)
     if opts.sql:

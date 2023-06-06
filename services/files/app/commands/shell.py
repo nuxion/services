@@ -20,7 +20,7 @@ def shell_cli(settings_module):
 
     settings = load_conf(settings_module)
 
-    db = AsyncSQL(settings.DATABASES["default"])
+    db = AsyncSQL.from_conf(settings.DATABASES["default"])
     # S = db.sessionmaker()
     start_ipython(
         argv=[],

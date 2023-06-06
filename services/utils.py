@@ -3,6 +3,7 @@ import codecs
 import importlib.util
 import json
 import os
+import click
 import re
 import secrets
 import subprocess
@@ -10,7 +11,7 @@ import unicodedata
 from enum import Enum
 from importlib import import_module
 from pathlib import Path
-from typing import Callable
+from typing import Callable, Union
 
 import aiofiles
 from sanic import Request
@@ -168,6 +169,10 @@ def get_class(fullclass_path):
     mod = import_module(module)
     cls = getattr(mod, class_)
     return cls
+
+
+def get_command(fullname_path) -> Union[click.core.Command, click.core.Group]:
+    return get_class(fullname_path)
 
 
 def init_blueprints_legacy(app, blueprints_allowed, package_dir="services.web"):

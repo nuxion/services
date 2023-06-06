@@ -79,3 +79,20 @@ TEMPLATES_DIR = [
     "{{ data.app_name }}/templates"
 ]
 
+
+COMMANDS = [
+    "{{ data.app_name }}.commands.shell.shell_cli",
+    {% if data.web -%}
+    "services.commands.web_cli",
+    "services.commands.create_app_cli",
+    {% endif -%}
+    {% if data.sql -%}
+    "services.commands.db_cli",
+    {% endif -%}
+    {% if data.users -%}
+    "{{ data.app_name }}.commands.users.users_cli",
+    {% endif -%}
+    {% if data.tasks -%}
+    "services.commands.tasks_cli",
+    {% endif -%}
+]

@@ -30,9 +30,6 @@ dependencies = [
     "cryptography>=39.0.1",
     "PyJWT>=2.6.0",
     "pydantic~=1.10.7",
-    "sanic~=23.3.0",
-    "sanic-ext~=23.3.0",
-    "redis~=4.5.1",
     "itsdangerous~=2.1.2",
     "aiofiles<23,>=22.1.0", # needed for jupyterlab
     ]
@@ -47,6 +44,16 @@ google = [
 sql = [
     "SQLAlchemy>=2.0.7",
     "alembic>=1.10.3",
+]
+
+web = [
+    "sanic~=23.3.0",
+    "sanic-ext~=23.3.0",
+    "redis~=4.5.1",
+]
+
+redis = [
+    "redis~=4.5.1",
 ]
 
 docs = [

@@ -1,15 +1,25 @@
 import sys
 from importlib import import_module
 from pathlib import Path
+from typing import Union
 
 import click
 from rich.console import Console
+
+from services import conf, defaults
 
 # from services.commands.common import create_app
 # from services.commands.db import dbcli
 # from services.commands.shell import shellcli
 # from services.commands.users import userscli
 # from services.commands.web import webcli
+
+
+def get_command(fullname_path) -> Union[click.core.Command, click.core.Group]:
+    module, class_ = fullname_path.rsplit(".", maxsplit=1)
+    mod = import_module(module)
+    cls = getattr(mod, class_)
+    return cls
 
 
 def import_cli(cli_app, package_dir="services.commands"):
@@ -55,14 +65,14 @@ def init_cli():
         ver = get_version()
         console.print(f"[bold magenta]{ver}[/bold magenta]")
 
-    # cli.add_command(version)
-    # cli.add_command(webcli)
-    # cli.add_command(userscli)
-    # cli.add_command(dbcli)
-    # cli.add_command(create_app)
-    # cli.add_command(shellcli)
-    import_cli(cli)
-    import_cli_from_current(cli)
+    # import_cli(cli)
+    # import_cli_from_current(cli)
+    cli.add_command(version)
+    _conf = conf.load_conf(default_module=defaults.SETTINGS_MODULE)
+    for cmd in _conf.COMMANDS:
+        _cmd = get_command(cmd)
+        cli.add_command(_cmd)
+
     return cli
 
 

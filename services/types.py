@@ -207,6 +207,7 @@ class Settings(BaseSettings):
     CUSTOM_COMMANDS: List[str] = []
     USER_ENDPOINTS: bool = True
     USER_DB: str = "default"
+    COMMANDS: List[str] = []
     TASKS: Optional[TasksBackend] = None
 
     APPS: List[str] = []

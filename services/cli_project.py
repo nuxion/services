@@ -25,6 +25,13 @@ console = Console()
     help="Add a index view example and templates",
 )
 @click.option(
+    "--web/--no-web",
+    default=True,
+    is_flag=True,
+    show_default=True,
+    help="Add sanic web server",
+)
+@click.option(
     "--users/--no-users",
     default=False,
     is_flag=True,
@@ -58,7 +65,9 @@ console = Console()
     help="Name of the project, if empty it will ask you for a name",
 )
 @click.argument("base_path")
-def create_service_project(base_path, name, vite, html, users, tasks, sql, storage):
+def create_service_project(
+    base_path, web, name, vite, html, users, tasks, sql, storage
+):
     """Start a new project"""
     root = Path(base_path).resolve()
     opts = init_script.ScriptOpts(
@@ -71,6 +80,7 @@ def create_service_project(base_path, name, vite, html, users, tasks, sql, stora
         sql=sql,
         storage=storage,
         html=html,
+        web=web,
     )
     print(opts)
 
