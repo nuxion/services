@@ -2,17 +2,60 @@ import contextlib
 import logging
 from typing import Any, Callable, Coroutine, List, Optional
 
-from sqlalchemy import MetaData, create_engine, event, inspect, text
+from sqlalchemy import create_engine, event, inspect, text
 from sqlalchemy.engine.base import Engine
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
 # from sqlalchemy.dialects.postgresql.base import PGInspector
-from sqlalchemy.orm import Session, scoped_session, sessionmaker
+from sqlalchemy.orm import sessionmaker
+from sqlalchemy.schema import (
+    DropConstraint,
+    DropTable,
+    ForeignKeyConstraint,
+    MetaData,
+    Table,
+)
 
 from services import types
 
-from .utils import drop_everything
+
+def drop_everything(engine):
+    """(On a live db) drops all foreign key constraints before dropping all tables.
+    Workaround for SQLAlchemy not doing DROP ## CASCADE for drop_all()
+    (https://github.com/pallets/flask-sqlalchemy/issues/722)
+    """
+
+    con = engine.connect()
+    trans = con.begin()
+    inspector = inspect(engine)
+
+    # We need to re-create a minimal metadata with only the required things to
+    # successfully emit drop constraints and tables commands for postgres (based
+    # on the actual schema of the running instance)
+    meta = MetaData()
+    tables = []
+    all_fkeys = []
+
+    for table_name in inspector.get_table_names():
+        fkeys = []
+
+        for fkey in inspector.get_foreign_keys(table_name):
+            if not fkey["name"]:
+                continue
+
+            fkeys.append(ForeignKeyConstraint((), (), name=fkey["name"]))
+
+        tables.append(Table(table_name, meta, *fkeys))
+        all_fkeys.extend(fkeys)
+
+    for fkey in all_fkeys:
+        con.execute(DropConstraint(fkey))
+
+    for table in tables:
+        con.execute(DropTable(table))
+
+    trans.commit()
 
 
 def sqlite_async_uri(filename) -> str:

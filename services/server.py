@@ -6,7 +6,7 @@ from sanic.response import json
 
 from services import defaults
 from services.base import WebAppSpec
-from services.db.plugin import init_db
+from services.db.web import init_db
 from services.redis_conn import create_pool
 from services.templates import Render
 from services.types import Settings
@@ -18,20 +18,6 @@ version = get_version()
 
 async def status_handler(request):
     return json(dict(msg="We are ok", version=version))
-
-
-# def init_db(app: Sanic, settings: Settings):
-#    from services.db.web import sanic_init_db
-#    sanic_init_db(app, settings)
-
-
-# async def after_request(request: Request):
-#     current_app = request.app
-#     request.ctx.session = current_app.ctx.db.scoped_session()
-#
-#
-# async def before_request(request: Request):
-#     request.ctx.session.close()
 
 
 def create_srv(

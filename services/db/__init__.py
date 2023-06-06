@@ -1,4 +1,3 @@
-from .common import Base
 from .migration import Migration
 from .pages import (
     NextPage,

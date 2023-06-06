@@ -4,7 +4,7 @@ from sanic.views import HTTPMethodView
 from sanic_ext import openapi
 
 {% if data.users -%}
-from services.db.plugin import DBHelper
+from services.db.web import DBHelper
 from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security.sessionauth import SessionAuth
 {% endif -%}

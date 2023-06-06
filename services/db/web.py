@@ -1,43 +1,77 @@
-import os
-from contextvars import ContextVar
+import contextlib
+from typing import AsyncIterator
+from sanic import Sanic
+from sanic.log import logger
+from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
-from services import defaults
-from services.db.nosync import AsyncSQL
+from services.db.sqlhelper import AsyncSQL
 from services.types import Settings
-from sanic import Request, Sanic
-from sanic.response import HTTPResponse
 
-_base_model_session_ctx = ContextVar("session")
+# from typing import AsyncContextManager
 
 
-def create_db_instance(url) -> AsyncSQL:
-    return AsyncSQL(url)
+class DBHelper:
+    def __init__(self, app: Sanic):
+        self.app = app
+
+    async def listener_db(self, app: Sanic):
+        for k, v in app.config.DATABASES.items():
+            _db = AsyncSQL.from_conf(v)
+            logger.info("Starting db %s", k)
+            # await _db.init()
+            app.ctx.databases[k] = _db
+
+    def get_db(self, *, name="default") -> AsyncSQL:
+        return self.app.ctx.databases.get(name)
+
+    def get_engine(self, *, name="default") -> AsyncEngine:
+        db = self.get_db(name=name)
+        return db.engine
+
+    async def dispose(self, *, name="default"):
+        db = self.get_db(name=name)
+        await db.dispose()
+
+    @contextlib.asynccontextmanager
+    async def session(self, *, name="default") -> AsyncIterator[AsyncSession]:
+        """
+        To be used for ORM implementation
+        """
+        db = self.get_db(name=name)
+        try:
+            async with db.async_session() as session:
+                yield session
+        finally:
+            await self.dispose()
+
+    @contextlib.asynccontextmanager
+    async def conn(self, *, name="default") -> AsyncIterator[AsyncSession]:
+        """
+        To be used as the core part
+        """
+        db = self.get_db(name=name)
+        try:
+            async with db.conn() as conn:
+                yield conn
+        finally:
+            await self.dispose()
+
+    @contextlib.asynccontextmanager
+    async def begin(self, *, name="default") -> AsyncIterator[AsyncSession]:
+        """
+        To be used as the core part
+        """
+        db = self.get_db(name=name)
+        try:
+            async with db.begin() as conn:
+                yield conn
+        finally:
+            await self.dispose()
 
 
-async def inject_session_req(request: Request):
-    current_app = request.app
-    request.ctx.session = current_app.ctx.db.sessionmaker()
-    request.ctx.session_ctx_token = _base_model_session_ctx.set(request.ctx.session)
-
-
-async def close_session_res(request: Request, response: HTTPResponse):
-    if hasattr(request.ctx, "session_ctx_token"):
-        _base_model_session_ctx.reset(request.ctx.session_ctx_token)
-        await request.ctx.session.close()
-
-
-async def listener_db(app: Sanic):
-    _db = create_db_instance(app.config.ASQL)
-    app.ctx.db = _db
-    await app.ctx.db.init()
-
-
-def sanic_init_db(app: Sanic, settings: Settings):
-    app.config.ASQL = settings.ASQL
-    app.register_listener(listener_db, "before_server_start")
-    app.register_middleware(inject_session_req, "request")
-    app.register_middleware(close_session_res, "response")
-
-
-def get_db(request: Request, name="default") -> AsyncSQL:
-    return request.app.ctx.databases[name]
+def init_db(app: Sanic, settings: Settings):
+    app.config.DATABASES = settings.DATABASES
+    db_helper = DBHelper(app)
+    app.register_listener(db_helper.listener_db, "before_server_start")
+    app.ext.dependency(db_helper)

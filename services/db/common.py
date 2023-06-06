@@ -77,7 +77,7 @@ class CommonMixin:
 
 
 @declarative_mixin
-class TrackCreationMixin:
+class DateTrackMixin:
     created_at = Column(
         DateTime(),
         server_default=functions.now(),
@@ -88,6 +88,3 @@ class TrackCreationMixin:
         server_default=functions.now(),
         nullable=False,
     )
-
-
-Base = declarative_base()

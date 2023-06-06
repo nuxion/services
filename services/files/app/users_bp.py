@@ -2,7 +2,7 @@ from sanic import Blueprint, Request
 from sanic.response import json
 from sanic_ext import openapi
 
-from services.db.plugin import DBHelper
+from services.db.web import DBHelper
 from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security import protected
 from services.security.jwtauth import JWTAuth
