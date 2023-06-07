@@ -6,7 +6,7 @@ from {{ data.app_name }}.tasks import TaskExample
 {% endif -%}
 {% if data.storage -%}
 from services.storage import Storage
-from services.utils import stream_reader
+from services.server import stream_reader
 {% endif -%}
 
 {{ data.app_name }}_bp = Blueprint("{{ data.app_name }}", url_prefix="{{ data.app_name }}", version="v1")

@@ -3,7 +3,6 @@ import codecs
 import importlib.util
 import json
 import os
-import click
 import re
 import secrets
 import subprocess
@@ -14,7 +13,7 @@ from pathlib import Path
 from typing import Callable, Union
 
 import aiofiles
-from sanic import Request
+import click
 
 from services import __about__
 from services.errors import CommandExecutionException
@@ -171,10 +170,6 @@ def get_class(fullclass_path):
     return cls
 
 
-def get_command(fullname_path) -> Union[click.core.Command, click.core.Group]:
-    return get_class(fullname_path)
-
-
 def init_blueprints_legacy(app, blueprints_allowed, package_dir="services.web"):
     """
     It will import bluprints from modules that ends with "_bp" and belongs
@@ -238,20 +233,6 @@ def from_sync2async(func, *args, **kwargs):
     loop = asyncio.get_event_loop()
     rsp = loop.run_until_complete(func(*args, **kwargs))
     return rsp
-
-
-async def stream_reader(request: Request):
-    """
-    It's a wrapper to be used to yield response from a stream
-    to another stream.
-    it's used with project upload data to stream upload zip directly to
-    the fileserver instead of load data in memory.
-    """
-    while True:
-        body = await request.stream.read()
-        if body is None:
-            break
-        yield body
 
 
 def binary_file_reader(fp: str, chunk_size=1024):

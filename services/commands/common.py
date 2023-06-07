@@ -5,7 +5,7 @@ from secrets import token_urlsafe
 import click
 from rich.console import Console
 
-from services import init_script, workers
+from services import init_script
 
 console = Console()
 

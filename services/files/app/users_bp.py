@@ -3,11 +3,10 @@ from sanic.response import json
 from sanic_ext import openapi
 
 from services.db.web import DBHelper
-from services.errors import AuthValidationFailed, WebAuthFailed
 from services.security import protected
 from services.security.jwtauth import JWTAuth
 from services.types import JWTPayload, JWTResponse, UserLogin
-from services import utils
+from services import utils, errors
 
 from ..managers import UserManager
 
@@ -26,8 +25,8 @@ async def login_handler(request: Request, um: UserManager, auth: JWTAuth, db: DB
             user = await um.authenticate(
                 session, username=creds.username, to_verify=creds.password
             )
-    except AuthValidationFailed as exc:
-        raise WebAuthFailed() from exc
+    except errors.AuthValidationFailed as exc:
+        raise errors.web.WebAuthFailed() from exc
 
     # jwt = await manager.generate_token(user)
     payload = JWTPayload(custom={"usr": user.username, "scopes": user.scopes})
@@ -52,7 +51,7 @@ async def refresh_handler(request, auth: JWTAuth):
     at = request.token
     rftkn = request.json.get("refresh_token")
     if not rftkn:
-        raise WebAuthFailed()
+        raise errors.web.WebAuthFailed()
 
     old_token = JWTResponse(access_token=at, refresh_token=rftkn)
     # redis = request.ctx.web_redis
@@ -61,5 +60,5 @@ async def refresh_handler(request, auth: JWTAuth):
             old_token.access_token, old_token.refresh_token
         )
         return json(jwt_res.dict(), 200)
-    except AuthValidationFailed as e:
-        raise WebAuthFailed() from e
+    except errors.AuthValidationFailed as e:
+        raise errors.web.WebAuthFailed() from e

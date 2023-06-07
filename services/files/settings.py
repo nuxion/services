@@ -85,6 +85,9 @@ COMMANDS = [
     {% if data.web -%}
     "services.commands.web_cli",
     "services.commands.create_app_cli",
+    {% if data.tasks -%}
+    "services.commands.tasks.tasks_cli",
+    {% endif -%}
     {% endif -%}
     {% if data.sql -%}
     "services.commands.db_cli",
@@ -92,7 +95,5 @@ COMMANDS = [
     {% if data.users -%}
     "{{ data.app_name }}.commands.users.users_cli",
     {% endif -%}
-    {% if data.tasks -%}
-    "services.commands.tasks_cli",
-    {% endif -%}
+
 ]

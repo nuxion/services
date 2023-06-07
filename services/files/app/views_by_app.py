@@ -5,7 +5,8 @@ from sanic_ext import openapi
 
 {% if data.users -%}
 from services.db.web import DBHelper
-from services.errors import AuthValidationFailed, WebAuthFailed
+from services.errors import AuthValidationFailed
+from services.errors.web import WebAuthFailed
 from services.security.sessionauth import SessionAuth
 {% endif -%}
 from services.shortcuts import async_render

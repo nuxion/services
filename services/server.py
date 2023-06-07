@@ -4,16 +4,29 @@ from typing import Callable
 from sanic import Request, Sanic
 from sanic.response import json
 
-from services import defaults
+from services import defaults, storage
 from services.base import WebAppSpec
 from services.db.web import init_db
 from services.redis_conn import create_pool
 from services.templates import Render
 from services.types import Settings
 from services.utils import get_class, get_version
-from services import storage
 
 version = get_version()
+
+
+async def stream_reader(request: Request):
+    """
+    It's a wrapper to be used to yield response from a stream
+    to another stream.
+    it's used with project upload data to stream upload zip directly to
+    the fileserver instead of load data in memory.
+    """
+    while True:
+        body = await request.stream.read()
+        if body is None:
+            break
+        yield body
 
 
 async def status_handler(request):

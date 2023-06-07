@@ -30,9 +30,9 @@ class Authenticator:
 
     def init_app(self, app):
         app.ctx.auth_beta = self
-        app.error_handler.add(errors.WebAuthFailed, self.auth_error_handler)
+        app.error_handler.add(errors.web.WebAuthFailed, self.auth_error_handler)
         app.error_handler.add(
-            errors.MissingAuthorizationHeader, self.auth_error_handler
+            errors.web.MissingAuthorizationHeader, self.auth_error_handler
         )
 
     def bp_middleware(self, request):
@@ -40,7 +40,7 @@ class Authenticator:
             self._validators, request, self._scopes, self._require_all
         )
         if not valid:
-            raise errors.WebAuthFailed()
+            raise errors.web.WebAuthFailed()
 
     def init_bp(
         self,
@@ -110,7 +110,7 @@ def protected(
             is_valid = auth.validate(validators, request, scopes, require_all)
 
             if not is_valid:
-                raise errors.WebAuthFailed(msg="Authentication failed")
+                raise errors.web.WebAuthFailed(msg="Authentication failed")
             response = f(request, *args, **kwargs)
             if isawaitable(response):
                 response = await response

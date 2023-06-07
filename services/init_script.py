@@ -209,7 +209,7 @@ def create_app(opts: ScriptOpts, from_new=False):
     if opts.sql:
         _sql_feature(opts)
 
-    if opts.tasks:
+    if opts.tasks and opts.web:
         render_to_file(template="app/tasks.py", dst=f"{dst}/tasks.py", data=data)
 
     if opts.users and opts.sql:

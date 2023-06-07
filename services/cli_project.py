@@ -1,8 +1,9 @@
+import sys
 from pathlib import Path
+from secrets import token_urlsafe
 
 import click
 from rich.console import Console
-from secrets import token_urlsafe
 
 from services import init_script
 
@@ -83,5 +84,13 @@ def create_service_project(
         web=web,
     )
     print(opts)
-
+    if opts.tasks and not opts.web:
+        console.print("[red] To use tasks feature you should enable [cyan]web[/][/]")
+        sys.exit(-1)
+    if opts.vite_enabled and not opts.web:
+        console.print("[red] To use vite feature you should enable [cyan]web[/][/]")
+        sys.exit(-1)
+    if opts.html and not opts.web:
+        console.print("[red] To use html feature you should enable [cyan]web[/][/]")
+        sys.exit(-1)
     init_script.create_project(opts)
