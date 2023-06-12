@@ -16,7 +16,7 @@ from services import defaults
     "--access-log", "-L", default=False, is_flag=True, help="Enable access_log"
 )
 @click.option(
-    "--debug", "-D", default=False, is_flag=True, help="Run in a single process"
+    "--single", "-S", default=False, is_flag=True, help="Run in a single process"
 )
 @click.option(
     "--storage", "-s", default=True, is_flag=True, help="With storage enabled"
@@ -29,7 +29,7 @@ from services import defaults
     help="Fullpath to settings module",
 )
 def web_cli(
-    host, port, workers, auto_reload, access_log, debug, dev, settings_module, storage
+    host, port, workers, auto_reload, access_log, single, dev, settings_module, storage
 ):
     """Run Web Server"""
     # pylint: disable=import-outside-toplevel
@@ -48,9 +48,11 @@ def web_cli(
     port = port or settings.PORT
     w = int(workers)
 
+    settings.SINGLE_PROCESS = single
+
     print(f"BASE_PATH: {settings.BASE_PATH}")
     print(f"SETTINGS_MODULE: {settings.SETTINGS_MODULE}")
-    print(f"Debug mode: {debug}")
+    print(f"Single Process: {settings.SINGLE_PROCESS}")
     print(f"Dev mode: {dev}")
     print(f"Access log: {access_log}")
     print(f"Autoreload: {auto_reload}")
@@ -59,19 +61,17 @@ def web_cli(
     print(f"OS PID: {os.getpid()}")
     print(f"With storage: {storage}")
 
-    loader = AppLoader(
-        factory=partial(create_srv, settings=settings)
-    )
+    loader = AppLoader(factory=partial(create_srv, settings=settings))
     srv = loader.load()
     srv.prepare(
         host=host,
         port=int(port),
         dev=dev,
-        auto_reload=auto_reload if not debug else False,
+        auto_reload=auto_reload if not single else False,
         access_log=access_log,
-        single_process=debug,
+        single_process=single,
     )
-    if debug:
+    if single:
         Sanic.serve_single()
     else:
         Sanic.serve(primary=srv, app_loader=loader)

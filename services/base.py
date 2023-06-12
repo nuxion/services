@@ -73,26 +73,3 @@ class WebAppSpec(ABC):
 
     def get_request_auth(self, request: Request) -> Authenticator:
         return request.app.ctx.auth_beta
-
-
-class PluginSpec(ABC):
-    name: str
-    request_ctx_name: Optional[str] = None
-    request_hook_enabled: bool = False
-    response_hook_enabled: bool = False
-
-    @abstractmethod
-    def init(self, app: Sanic, settings: Settings):
-        pass
-
-    def get_from_request(self, request):
-        obj = getattr(request.app.ctx, self.name)
-        return obj
-
-    @abstractmethod
-    async def request_hook(self, request: Request):
-        raise NotImplementedError("Response hook not implemented")
-
-    @abstractmethod
-    async def response_hook(self, request: Request, response: HTTPResponse):
-        raise NotImplementedError("Response hook not implemented")
