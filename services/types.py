@@ -18,8 +18,8 @@ class StaticDir(BaseModel):
 class Database(BaseModel):
     """
     Database configuration object to be used with
-    :class:`services.db.sqlhelper.SQL` and
-    :class:`services.db.sqlhelper.AsyncSQL`
+    :class:`services.db.SQL` and
+    :class:`services.db.AsyncSQL`
 
     Examples:
 
@@ -229,7 +229,7 @@ class Settings(BaseSettings):
     CORS_ORIGINS: Union[List[str], str] = "*"
     CORS_ALLOW_HEADERS: Union[List[str], str] = "*"
     SANIC_APP_NAME: str = defaults.SANIC_APP
-    SINGLE_PROCESS: str = False
+    SINGLE_PROCESS: bool = False
     SETTINGS_MODULE: Optional[str] = None
 
     class Config:

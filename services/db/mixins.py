@@ -1,9 +1,14 @@
-from sqlalchemy import BigInteger, Column, DateTime
-from sqlalchemy.ext.compiler import compiles
+import datetime
+
+from sqlalchemy import DateTime
 from sqlalchemy.ext.mutable import Mutable
-from sqlalchemy.orm import declarative_base, declarative_mixin
+from sqlalchemy.orm import Mapped, declarative_mixin, mapped_column
 from sqlalchemy.sql import functions
-from sqlalchemy.types import BINARY, DECIMAL, JSON, BigInteger
+
+# from sqlalchemy.types import BINARY, DECIMAL, JSON, BigInteger
+
+
+# from sqlalchemy.ext.compiler import compiles
 
 
 class MutableList(Mutable, list):
@@ -39,51 +44,14 @@ class MutableList(Mutable, list):
             return value
 
 
-@compiles(JSON, "postgresql")
-def compile_jsonb_postgres(type_, compile, **kw):
-    return "JSONB"
-
-
-@compiles(BINARY, "postgresql")
-def compile_bytea_postgres(type_, compiler, **kw):
-    return "BYTEA"
-
-
-@compiles(BigInteger, "sqlite")
-def compile_integer_sqlite(type_, compiler, **kw):
-    return "Integer"
-
-
-# @compiles(DECIMAL, "sqlite")
-# def compile_integer_sqlite(type_, compiler, **kw):
-#     return "Text"
-
-
-@declarative_mixin
-class CommonMixin:
-    id = Column(BigInteger, primary_key=True)
-    created_at = Column(
-        DateTime(),
-        server_default=functions.now(),
-        index=True,
-        nullable=False,
-    )
-    updated_at = Column(
-        DateTime(),
-        server_default=functions.now(),
-        nullable=False,
-        onupdate=functions.now(),
-    )
-
-
 @declarative_mixin
 class DateTrackMixin:
-    created_at = Column(
+    created_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(),
         server_default=functions.now(),
         nullable=False,
     )
-    updated_at = Column(
+    updated_at: Mapped[datetime.datetime] = mapped_column(
         DateTime(),
         server_default=functions.now(),
         nullable=False,

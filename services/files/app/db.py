@@ -1,12 +1,14 @@
-from sqlalchemy.orm import registry as sql_registry
 from sqlalchemy.ext.compiler import compiles
-from services.db import SQL, AsyncSQL
+from sqlalchemy.orm import DeclarativeBase
 from sqlalchemy.types import BINARY, JSON, BigInteger
+
+from services.db import SQL, AsyncSQL
 
 # equivalent to Base = declarative_base()
 
-registry = sql_registry()
-Base = registry.generate_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 async def async_create_all(db: AsyncSQL):

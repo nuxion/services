@@ -9,7 +9,7 @@ from rich.prompt import Prompt
 from rich.table import Table
 
 from services import conf, defaults, errors, types
-from services.db.sqlhelper import AsyncSQL
+from services.db import AsyncSQL
 
 from ..managers import GroupManager, UserManager
 from ..users_models import GroupModel, UserModel

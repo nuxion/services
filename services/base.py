@@ -5,7 +5,7 @@ from typing import Callable, List, Optional, Tuple
 from pydantic import BaseModel
 from sanic import HTTPResponse, Request, Sanic
 
-from services.db.sqlhelper import AsyncSQL
+from services.db import AsyncSQL
 from services.security import Authenticator, IAuth
 from services.types import Settings
 

@@ -1,13 +1,10 @@
 import importlib
 
 import click
-from rich.console import Console
-from rich.prompt import Prompt
 from sqlalchemy.sql.schema import MetaData
 
-from services import conf, defaults, types, utils
-from services.db import Migration
-from services.db.sqlhelper import SQL
+from services import conf, defaults, utils
+from services.db import SQL, Migration
 
 
 def get_meta_from_app(app_name) -> MetaData:
