@@ -1,7 +1,8 @@
 from datetime import datetime
 from typing import Any, Dict, Union
 
-from services.db.managers import AsyncManagerBase
+from services import types
+from services.db.managers import AsyncManagerBase, AsyncSecretBase, SecretBase
 from services.errors import (
     AuthValidationFailed,
     DBObjectNotFound,
@@ -10,6 +11,8 @@ from services.errors import (
 )
 from services.security import PasswordScript
 
+from .models import SecretsModel
+{% if data.users -%}
 from .users_models import GroupModel, UserModel
 
 
@@ -93,3 +96,14 @@ class UserManager(AsyncManagerBase[UserModel]):
         u.password = pass_
         u.updated_at = datetime.utcnow()
         session.add(u)
+
+{% endif -%}
+
+class AsyncSecrets(AsyncSecretBase[SecretsModel]):
+    def __init__(self, settings: types.Settings):
+        super().__init__(private_key=settings.SECURITY.secret_key)
+
+
+class Secrets(SecretBase[SecretsModel]):
+    def __init__(self, settings: types.Settings):
+        super().__init__(private_key=settings.SECURITY.secret_key)

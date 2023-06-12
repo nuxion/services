@@ -5,6 +5,7 @@ from sqlalchemy import BigInteger, Column, String
 {% if data.users -%}
 from {{ data.app_name}}.users_models import UserModel, GroupModel, user_group_table
 {% endif -%}
+from services.db.secrets import SecretMixin
 
 from .db import Base
 
@@ -28,3 +29,7 @@ class ExampleModel(Base):
     title = Column(String())
     description = Column(String())
 
+
+class SecretsModel(Base, SecretMixin):
+    __tablename__ = "{{ data.app_name }}_secrets"
+    __mapper_args__ = {"eager_defaults": True}

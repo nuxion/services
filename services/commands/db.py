@@ -1,10 +1,11 @@
 import click
 from rich.console import Console
 from rich.prompt import Prompt
+from sqlalchemy.sql.schema import MetaData
+
 from services import conf, defaults, types, utils
 from services.db import Migration
 from services.db.sqlhelper import SQL
-from sqlalchemy.sql.schema import MetaData
 
 
 def get_meta_from_app(app_name) -> MetaData:
@@ -66,7 +67,11 @@ def drop(app_name, db, settings_module):
 )
 @click.argument("app_name")
 def upgrade(app_name, db, settings_module, alembic, to):
-    """upgrade a database based on the migrations created"""
+    """upgrade a database based on the migrations created. Use as:
+
+    srv db upgrade example_app
+
+    """
     settings = conf.load_conf(settings_module)
 
     m = Migration(
@@ -131,7 +136,10 @@ def revision(
     depends_on,
     settings_module,
 ):
-    """generates migrations files from models defined in apps"""
+    """generates migrations files from models defined in apps. Use as:
+
+    srv db revision example_app -m first -R 0001 -m first
+    """
 
     settings = conf.load_conf(settings_module)
 

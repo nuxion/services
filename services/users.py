@@ -3,7 +3,7 @@ from typing import Any, Dict
 from sqlalchemy import BigInteger, Boolean, Column, DateTime, String
 
 # from sqlalchemy.dialects.postgresql import BYTEA
-from sqlalchemy.orm import declarative_mixin
+from sqlalchemy.orm import declarative_mixin, declared_attr
 from sqlalchemy.sql import functions
 from sqlalchemy.types import BINARY
 

@@ -116,7 +116,6 @@ def _users_feature(opts: ScriptOpts):
         template="app/users_models.py", dst=f"{dst}/users_models.py", data=data
     )
 
-    render_to_file(template="app/managers.py", dst=f"{dst}/managers.py", data=data)
     render_to_file(
         template="app/commands/users.py", dst=f"{dst}/commands/users.py", data=data
     )
@@ -212,6 +211,7 @@ def create_app(opts: ScriptOpts, from_new=False):
     if opts.tasks and opts.web:
         render_to_file(template="app/tasks.py", dst=f"{dst}/tasks.py", data=data)
 
+    render_to_file(template="app/managers.py", dst=f"{dst}/managers.py", data=data)
     if opts.users and opts.sql:
         _users_feature(opts)
     elif opts.users and not opts.sql:

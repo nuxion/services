@@ -1,11 +1,13 @@
 from datetime import datetime
 from typing import Any, Dict, Generic, List, TypeVar, Union
 
+from cryptography.fernet import Fernet
 from sqlalchemy import delete as sqldelete
 from sqlalchemy import desc, func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
+from services import types
 from services.errors import DBObjectNotFound
 from services.utils import get_class
 
@@ -115,3 +117,111 @@ class AsyncManagerBase(Generic[ModelT]):
             await self._delete_hard(session, key)
         else:
             await self._delete_flag(session, key)
+
+
+class AsyncSecretBase(Generic[ModelT]):
+    model_class: str
+    lookup_key: str
+
+    def __init__(self, private_key: str):
+        self._private_key = private_key
+        self._f = Fernet(self._private_key)
+        self._model: ModelT = get_class(self.model_class)
+        self._key = self.lookup_key
+
+    def decrypt(self, encrypted: bytes) -> str:
+        e = self._f.decrypt(encrypted).decode("utf-8")
+        return e
+
+    def encrypt(self, text: str) -> bytes:
+        _hash = self._f.encrypt(text.encode("utf-8"))
+        return _hash
+
+    def _get_column(self, col_name) -> InstrumentedAttribute:
+        return getattr(self._model, col_name)
+
+    async def _get_one(self, session, key: str) -> ModelT:
+        attr_key = self._get_column(self._key)
+        stmt = select(self._model).where(attr_key == key).limit(1)
+        rsp = await session.execute(stmt)
+
+        return rsp.scalar_one_or_none()
+
+    @property
+    def tablename(self) -> str:
+        return self._model.__tablename__
+
+    async def delete(self, session, key: str):
+        attr_key = self._get_column(self._key)
+        stmt = sqldelete(self._model).where(attr_key == key)
+        await session.execute(stmt)
+
+    def _obj_or_raise(self, lookup, obj: Union[ModelT, None]) -> ModelT:
+        if not obj:
+            raise DBObjectNotFound(self.tablename, lookup)
+        return obj
+
+    async def get(self, session, key: str) -> str:
+        _obj = await self._get_one(session, key)
+        encrypted = self._obj_or_raise(key, _obj)
+        return self.decrypt(encrypted)
+
+    def write(self, session, key: str, data: str) -> ModelT:
+        enc = self.encrypt(data)
+        model = self._model(key=key, secret=enc)
+        session.add(model)
+        return model
+
+
+class SecretBase(Generic[ModelT]):
+    model_class: str
+    lookup_key: str
+
+    def __init__(self, settings: types.Settings):
+        self._private_key = settings.SECURITY.secret_key
+        self._f = Fernet(self._private_key)
+        self._model: ModelT = get_class(self.model_class)
+        self._key = self.lookup_key
+
+    def decrypt(self, encrypted: bytes) -> str:
+        e = self._f.decrypt(encrypted).decode("utf-8")
+        return e
+
+    def encrypt(self, text: str) -> bytes:
+        _hash = self._f.encrypt(text.encode("utf-8"))
+        return _hash
+
+    def _get_column(self, col_name) -> InstrumentedAttribute:
+        return getattr(self._model, col_name)
+
+    def _get_one(self, session, key: str) -> ModelT:
+        attr_key = self._get_column(self._key)
+        stmt = select(self._model).where(attr_key == key).limit(1)
+        rsp = session.execute(stmt)
+
+        return rsp.scalar_one_or_none()
+
+    @property
+    def tablename(self) -> str:
+        return self._model.__tablename__
+
+    def delete(self, session, key: str):
+        attr_key = self._get_column(self._key)
+        stmt = sqldelete(self._model).where(attr_key == key)
+        session.execute(stmt)
+
+    def _obj_or_raise(self, lookup, obj: Union[ModelT, None]) -> ModelT:
+        if not obj:
+            raise DBObjectNotFound(self.tablename, lookup)
+        return obj
+
+    def get(self, session, key: str) -> str:
+        _obj = self._get_one(session, key)
+        encrypted = self._obj_or_raise(key, _obj)
+        return self.decrypt(encrypted)
+
+    def write(self, session, key: str, data: str) -> ModelT:
+        enc = self.encrypt(data)
+        model = self._model(key=key, secret=enc)
+        session.add(model)
+        return model
