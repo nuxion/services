@@ -1,3 +1,5 @@
+import importlib
+
 import click
 from rich.console import Console
 from rich.prompt import Prompt
@@ -31,8 +33,12 @@ def db_cli():
 )
 @click.argument("app_name")
 def create(app_name, db, settings_module):
-    """creates database schemas"""
+    """Creates database schemas.
+
+    Models should be accesible from {app_name}.models"""
     settings = conf.load_conf(settings_module)
+
+    models_module = importlib.import_module(f"{app_name}.models")
 
     db = SQL.from_conf(settings.DATABASES[db])
     db.create_all(get_meta_from_app(app_name))
@@ -51,8 +57,10 @@ def drop(app_name, db, settings_module):
     """drop database schemas"""
     settings = conf.load_conf(settings_module)
 
+    models_module = importlib.import_module(f"{app_name}.models")
+
     db = SQL.from_conf(settings.DATABASES[db])
-    db.drop_all(get_meta_from_app(app_name))
+    db.drop_all(get_meta_from_app(app_name), all_=True)
 
 
 @db_cli.command()
