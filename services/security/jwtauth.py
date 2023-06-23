@@ -97,7 +97,7 @@ class JWTAuth(IAuth):
     def validate(
         self,
         token: str,
-        required_scopes: Optional[List[str]],
+        required_scopes: Optional[List[str]] = None,
         require_all=True,
         iss=None,
         aud=None,
