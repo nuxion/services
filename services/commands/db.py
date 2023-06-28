@@ -5,6 +5,10 @@ from sqlalchemy.sql.schema import MetaData
 
 from services import conf, defaults, utils
 from services.db import SQL, Migration
+from services.db.helpers import delete_table
+from rich.console import Console
+
+console = Console()
 
 
 def get_meta_from_app(app_name) -> MetaData:
@@ -39,6 +43,56 @@ def create(app_name, db, settings_module):
 
     db = SQL.from_conf(settings.DATABASES[db])
     db.create_all(get_meta_from_app(app_name))
+
+
+@db_cli.command("list-tables")
+@click.option("--db", default="default", help="db name in the settings module")
+@click.option(
+    "--settings-module",
+    "-s",
+    default=defaults.SETTINGS_MODULE,
+    help="Fullpath to settings module",
+)
+@click.argument("app_name")
+def list_tables(app_name, db, settings_module):
+    """List tables of a database"""
+
+    settings = conf.load_conf(settings_module)
+
+    _ = importlib.import_module(f"{app_name}.models")
+
+    db = SQL.from_conf(settings.DATABASES[db])
+    tables = db.list_tables()
+    console.print(tables)
+
+
+@db_cli.command("drop-table")
+@click.option("--db", default="default", help="db name in the settings module")
+@click.option(
+    "--settings-module",
+    "-s",
+    default=defaults.SETTINGS_MODULE,
+    help="Fullpath to settings module",
+)
+@click.option(
+    "--table",
+    "-t",
+    help="Name of the table to drop",
+)
+@click.argument("app_name")
+def drop_table(app_name, db, settings_module, table):
+    """Delete a table"""
+
+    settings = conf.load_conf(settings_module)
+
+    _ = importlib.import_module(f"{app_name}.models")
+
+    _db = SQL.from_conf(settings.DATABASES[db])
+    res = delete_table(_db, table)
+    if res:
+        console.print(f"[green]Table {table} deleted[/]")
+    else:
+        console.print(f"[red]Delete of table {table} failed[/]")
 
 
 @db_cli.command()

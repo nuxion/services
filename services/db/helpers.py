@@ -2,8 +2,9 @@ import contextlib
 import logging
 from typing import Any, Callable, Coroutine, List, Optional
 
-from sqlalchemy import create_engine, event, inspect, text
+from sqlalchemy import Table, create_engine, event, inspect, text
 from sqlalchemy.engine.base import Engine
+from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
 
@@ -221,12 +222,29 @@ class SQL:
         metadata.reflect(bind=self.engine)
         return metadata
 
+    def get_table(self, table_name: str, meta=None) -> Table:
+        if not meta:
+            meta = MetaData()
+        # try:
+        table = Table(table_name, meta, autoload_with=self.engine)
+        # except NoSuchTableError:
+        return table
+
     def add_event(self, func: Callable, type_event="connect"):
         event.listen(self.engine, type_event, func)
 
     def session_factory(self, expire_on_commit=False) -> sessionmaker:
         """it's actually returns a session"""
         return sessionmaker(self.engine, expire_on_commit=expire_on_commit)
+
+
+def delete_table(db: SQL, table_name: str) -> bool:
+    try:
+        tbl = db.get_table(table_name)
+        tbl.drop(bind=db.engine)
+    except NoSuchTableError:
+        return False
+    return True
 
 
 class AsyncSQL:
