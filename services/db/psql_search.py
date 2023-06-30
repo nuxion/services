@@ -10,9 +10,36 @@ def tsvector_column(fields="title || ' ' || description", lang="english"):
     )
 
 
-def search_stmt(model, text, lang="english", field="tsvector"):
+def search_stmt(model, text, field="tsvector"):
     col = getattr(model, field)
     stmt = sa.select(model).where(col.bool_op("@@")(sa.func.websearch_to_tsquery(text)))
+
+    return stmt
+
+
+def search_with_rank_stmt(model, text, field="tsvector"):
+    """Returns a tuple with the model and the rank value
+
+    check: https://www.postgresql.org/docs/current/textsearch-controls.html
+
+    used as:
+
+    .. code-block:: python
+
+
+        stmt = search_with_rank_stmt(PersonModel, "google")
+        with db.session() as s:
+            res = s.execute(stmt)
+            values = list(res)
+
+    """
+    col = getattr(model, field)
+    stmt = sa.select(
+        model, sa.func.ts_rank_cd(col, sa.func.websearch_to_tsquery(text)).label("rank")
+    ).where(col.bool_op("@@")(sa.func.websearch_to_tsquery(text)))
+    # stmt = sa.select(model.id, sa.func.ts_rank_cd(col, sa.func.websearch_to_tsquery(text), 0).label("rank"))
+    # stmt = stmt.order_by(sa.desc(sa.func.ts_rank_cd(col, sa.func.websearch_to_tsquery(text))))
+    stmt = stmt.order_by(sa.desc("rank"))
 
     return stmt
 
