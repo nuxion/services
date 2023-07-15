@@ -7,6 +7,7 @@ from sqlalchemy.engine.base import Engine
 from sqlalchemy.exc import NoSuchTableError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
+from sqlalchemy.exc import IntegrityError
 
 # from sqlalchemy.dialects.postgresql.base import PGInspector
 from sqlalchemy.orm import sessionmaker
@@ -391,3 +392,21 @@ class AsyncSQL:
         # for AsyncEngine created in function scope, close and
         # clean-up pooled connections
         await self._engine.dispose()
+
+
+def commit_or_rollback(session) -> bool:
+    try:
+        session.commit()
+    except IntegrityError:
+        session.rollback()
+        return False
+    return True
+
+
+async def acommit_or_rollback(session) -> bool:
+    try:
+        await session.commit()
+    except IntegrityError:
+        session.rollback()
+        return False
+    return True

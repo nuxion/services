@@ -6,6 +6,7 @@ from sqlalchemy.sql.schema import MetaData
 from services import conf, defaults, utils
 from services.db import SQL, Migration
 from services.db.helpers import delete_table
+from services.db.ext import utils as dbutils
 from rich.console import Console
 
 console = Console()
@@ -24,7 +25,7 @@ def db_cli():
     pass
 
 
-@db_cli.command()
+@db_cli.command(name="create-tables")
 @click.option("--db", default="default", help="db name in the settings module")
 @click.option(
     "--settings-module",
@@ -33,7 +34,7 @@ def db_cli():
     help="Fullpath to settings module",
 )
 @click.argument("app_name")
-def create(app_name, db, settings_module):
+def create_tables(app_name, db, settings_module):
     """Creates database schemas.
 
     Models should be accesible from {app_name}.models"""
@@ -214,3 +215,26 @@ def revision(
         depends_on=depends_on,
         autogenerate=True,
     )
+
+
+@db_cli.command(name="create-db")
+@click.option("--db", default="default", help="db name in the settings module")
+@click.option(
+    "--settings-module",
+    "-s",
+    default=defaults.SETTINGS_MODULE,
+    help="Fullpath to settings module",
+)
+@click.option(
+    "--encoding",
+    "-e",
+    default="utf8",
+    help="Encoding",
+)
+def create_db(db, settings_module, encoding):
+    """Creates database"""
+
+    settings = conf.load_conf(settings_module)
+
+    _db = settings.DATABASES[db]
+    dbutils.create_databese(_db.sync_url, encoding=encoding)
