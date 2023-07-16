@@ -4,10 +4,9 @@ from typing import Any, Callable, Coroutine, List, Optional
 
 from sqlalchemy import Table, create_engine, event, inspect, text
 from sqlalchemy.engine.base import Engine
-from sqlalchemy.exc import NoSuchTableError
+from sqlalchemy.exc import IntegrityError, NoSuchTableError
 from sqlalchemy.ext.asyncio import AsyncSession, async_sessionmaker, create_async_engine
 from sqlalchemy.ext.asyncio.engine import AsyncEngine
-from sqlalchemy.exc import IntegrityError
 
 # from sqlalchemy.dialects.postgresql.base import PGInspector
 from sqlalchemy.orm import sessionmaker
@@ -143,6 +142,7 @@ class SQL:
         self._autoflush = autoflush
         self._engine = engine
         self._session = sessionmaker(self._engine, expire_on_commit=expire_on_commit)
+        self._tables: List[str] = None
 
     @staticmethod
     def create_engine(conf: types.Database) -> Engine:
@@ -214,6 +214,11 @@ class SQL:
         else:
             raise AttributeError("MetaData object or all_ param should be provided")
 
+    def tables(self) -> List[str]:
+        if not self._tables:
+            self._tables = self.list_tables()
+        return self._tables
+
     def list_tables(self) -> List[str]:
         inspector = inspect(self.engine)
         return inspector.get_table_names()
@@ -272,6 +277,7 @@ class AsyncSQL:
         self._async_session = async_sessionmaker(
             self._engine, expire_on_commit=expire_on_commit
         )
+        self._tables: List[str] = None
 
     @property
     def async_session(self) -> async_sessionmaker[AsyncSession]:
@@ -375,11 +381,16 @@ class AsyncSQL:
     async def drop_all(self, meta: Optional[MetaData] = None, all_=True):
         async with self._engine.begin() as conn:
             if all_:
-                await conn.run_sync(drop_everything, self.engine)
+                await conn.run_sync(drop_everything, self.sync_engine)
             elif meta:
                 await conn.run_sync(meta.drop_all)
             else:
                 raise AttributeError("MetaData object or all_ param should be provided")
+
+    async def tables(self) -> Coroutine[Any, Any, List[str]]:
+        if not self._tables:
+            self._tables = await self.list_tables()
+        return self._tables
 
     async def list_tables(self) -> Coroutine[Any, Any, List[str]]:
         async with self._engine.connect() as conn:

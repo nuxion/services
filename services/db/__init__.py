@@ -18,3 +18,4 @@ from .helpers import (
     commit_or_rollback,
     acommit_or_rollback,
 )
+from .managers2 import GenericManager

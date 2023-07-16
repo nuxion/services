@@ -1,8 +1,9 @@
 from datetime import datetime
-from typing import Any, Dict, Generic, List, TypeVar, Union
+from typing import Any, Dict, Generic, List, Optional, TypeVar, Union
 
 from sqlalchemy import delete as sqldelete
 from sqlalchemy import desc, func, select
+from sqlalchemy.engine.result import ChunkedIteratorResult
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm.attributes import InstrumentedAttribute
 
@@ -13,10 +14,10 @@ from services.utils import get_class
 ModelT = TypeVar("ModelT")
 
 
-class AManagerBase(Generic[ModelT]):
+class GenericManager(Generic[ModelT]):
     model_class: str
     lookup_key: str
-    active_key: str = "is_active"
+    active_key: Optional[str] = None
 
     def __init__(self):
         self._model: ModelT = get_class(self.model_class)
@@ -30,36 +31,87 @@ class AManagerBase(Generic[ModelT]):
     def _get_column(self, col_name) -> InstrumentedAttribute:
         return getattr(self._model, col_name)
 
-    async def list(
-        self, session, order_by=None, is_active=True, offset=0, limit=10
-    ) -> List[ModelT]:
+    @staticmethod
+    def scalars(result) -> List[ModelT]:
+        return list(result.scalars())
+
+    async def alist_actives(
+        self, session, order_by=None, offset=0, limit=10
+    ) -> ChunkedIteratorResult:
         stmt = select(self._model).offset(offset).limit(limit)
-        if is_active:
-            attr = self._get_column(self._active_key)
-            stmt = stmt.where(attr == True)
+        attr = self._get_column(self._active_key)
+        stmt = stmt.where(attr == True)
         if order_by:
             stmt.order_by(order_by, desc(order_by))
         result = await session.execute(stmt)
-        return list(result.scalars())
+        # return list(result.scalars())
+        return result
 
-    def _obj_or_raise(self, lookup, obj: Union[ModelT, None], is_active=True) -> ModelT:
+    def list_actives(
+        self, session, order_by=None, offset=0, limit=10
+    ) -> ChunkedIteratorResult:
+        stmt = select(self._model).offset(offset).limit(limit)
+        attr = self._get_column(self._active_key)
+        stmt = stmt.where(attr == True)
+        if order_by:
+            stmt.order_by(order_by, desc(order_by))
+        result = session.execute(stmt)
+        # return list(result.scalars())
+        return result
+
+    def list(self, session, order_by=None, offset=0, limit=10) -> ChunkedIteratorResult:
+        stmt = select(self._model).offset(offset).limit(limit)
+        if order_by:
+            stmt.order_by(order_by, desc(order_by))
+        result = session.execute(stmt)
+        # return list(result.scalars())
+        return result
+
+    async def alist(
+        self, session, order_by=None, offset=0, limit=10
+    ) -> ChunkedIteratorResult:
+        stmt = select(self._model).offset(offset).limit(limit)
+        if order_by:
+            stmt.order_by(order_by, desc(order_by))
+        result = await session.execute(stmt)
+        # return list(result.scalars())
+        return result
+
+    def _obj_or_raise(self, lookup, obj: Union[ModelT, None]) -> ModelT:
         if not obj:
             raise DBObjectNotFound(self.tablename, lookup)
-        if is_active:
-            attr = self._get_column(self._active_key)
-            if not attr:
-                raise DBObjectNotFound(self.tablename, lookup)
+        return obj
+
+    def _obj_or_raise_active(self, lookup, obj: Union[ModelT, None]) -> ModelT:
+        attr = self._get_column(self._active_key)
+        if not attr:
+            raise DBObjectNotFound(self.tablename, lookup)
 
         return obj
 
-    async def _get_one(self, session, key: str) -> ModelT:
+    def _get_one(self, session, key: str) -> ModelT:
+        attr_key = self._get_column(self._key)
+        stmt = select(self._model).where(attr_key == key).limit(1)
+        rsp = session.execute(stmt)
+
+        return rsp.scalar_one_or_none()
+
+    async def _aget_one(self, session, key: str) -> ModelT:
         attr_key = self._get_column(self._key)
         stmt = select(self._model).where(attr_key == key).limit(1)
         rsp = await session.execute(stmt)
 
         return rsp.scalar_one_or_none()
 
-    async def _commit_or_rollback(self, session) -> bool:
+    def _commit_or_rollback(self, session) -> bool:
+        try:
+            session.commit()
+        except IntegrityError:
+            session.rollback()
+            return False
+        return True
+
+    async def _acommit_or_rollback(self, session) -> bool:
         try:
             await session.commit()
         except IntegrityError:
@@ -67,31 +119,68 @@ class AManagerBase(Generic[ModelT]):
             return False
         return True
 
-    async def count(self, session, is_active=True) -> int:
+    def count(self, session) -> int:
         stmt = select(func.count(self._model.__table__.c.id))
-        if is_active:
-            attr = self._get_column(self.active_key)
-            stmt = stmt.where(attr == True)
+        res = session.execute(stmt)
+        return res.scalar()
+
+    async def acount(self, session) -> int:
+        stmt = select(func.count(self._model.__table__.c.id))
         res = await session.execute(stmt)
         return res.scalar()
 
-    async def create(
+    def count_actives(self, session) -> int:
+        stmt = select(func.count(self._model.__table__.c.id))
+        attr = self._get_column(self.active_key)
+        stmt = stmt.where(attr == True)
+        res = session.execute(stmt)
+        return res.scalar()
+
+    async def acount_actives(self, session) -> int:
+        stmt = select(func.count(self._model.__table__.c.id))
+        attr = self._get_column(self.active_key)
+        stmt = stmt.where(attr == True)
+        res = await session.execute(stmt)
+        return res.scalar()
+
+    def create(self, session, data: Dict[str, Any], commit=True) -> Union[ModelT, None]:
+        model = self._model(**data)
+        session.add(model)
+        if commit:
+            res = self._commit_or_rollback(session)
+            if not res:
+                return None
+        return model
+
+    async def acreate(
         self, session, data: Dict[str, Any], commit=True
     ) -> Union[ModelT, None]:
         model = self._model(**data)
         session.add(model)
         if commit:
-            res = await self._commit_or_rollback(session)
+            res = await self._acommit_or_rollback(session)
             if not res:
                 return None
         return model
 
-    async def get(self, session, key: str, is_active=True) -> ModelT:
-        _obj = await self._get_one(session, key)
-        return self._obj_or_raise(key, _obj, is_active)
+    def get_active(self, session, key: str) -> ModelT:
+        _obj = self._get_one(session, key)
+        return self._obj_or_raise_active(key, _obj)
 
-    async def update(self, session, key: str, data: Dict[str, Any]):
-        u = await self._get_one(session, key)
+    async def aget_active(self, session, key: str) -> ModelT:
+        _obj = await self._aget_one(session, key)
+        return self._obj_or_raise_active(key, _obj)
+
+    def get_one(self, session, key: str) -> ModelT:
+        _obj = self._get_one(session, key)
+        return self._obj_or_raise(key, _obj)
+
+    async def aget_one(self, session, key: str) -> ModelT:
+        _obj = await self._aget_one(session, key)
+        return self._obj_or_raise(key, _obj)
+
+    def update(self, session, key: str, data: Dict[str, Any]):
+        u = self._get_one(session, key)
         if not u:
             raise DBObjectNotFound(self.tablename, key)
 
@@ -100,19 +189,34 @@ class AManagerBase(Generic[ModelT]):
         u.updated_at = datetime.utcnow()
         session.add(u)
 
-    async def _delete_hard(self, session, key: str):
+    async def aupdate(self, session, key: str, data: Dict[str, Any]):
+        u = await self._aget_one(session, key)
+        if not u:
+            raise DBObjectNotFound(self.tablename, key)
+
+        for k, v in data.items():
+            setattr(u, k, v)
+        u.updated_at = datetime.utcnow()
+        session.add(u)
+
+    def hard_delete(self, session, key: str):
+        attr_key = self._get_column(self._key)
+        stmt = sqldelete(self._model).where(attr_key == key)
+        session.execute(stmt)
+
+    async def ahard_delete(self, session, key: str):
         attr_key = self._get_column(self._key)
         stmt = sqldelete(self._model).where(attr_key == key)
         await session.execute(stmt)
 
-    async def _delete_flag(self, session, key: str):
-        obj = await self._get_one(session, key)
+    async def soft_delete(self, session, key: str):
+        obj = self._get_one(session, key)
         setattr(obj, self._active_key, False)
         obj.updated_at = datetime.utcnow()
         session.add(obj)
 
-    async def delete(self, session, key: str, hard=False):
-        if hard:
-            await self._delete_hard(session, key)
-        else:
-            await self._delete_flag(session, key)
+    async def asoft_delete(self, session, key: str):
+        obj = await self._aget_one(session, key)
+        setattr(obj, self._active_key, False)
+        obj.updated_at = datetime.utcnow()
+        session.add(obj)

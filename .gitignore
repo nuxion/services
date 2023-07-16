@@ -484,3 +484,4 @@ db.sqlite
 .ssh/
 test_app/
 *.sqlite
+test.db
