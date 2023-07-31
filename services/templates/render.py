@@ -130,5 +130,21 @@ class Render:
         rendered = await template.render_async(conf=conf, **kwargs)
         return rendered
 
+    async def arender(self, tpl_name, **kwargs) -> str:
+        template = self.env.get_template(tpl_name)
+        # ctx = {
+        #     "request": request.ctx.__dict__,
+        # }
+        rendered = await template.render_async(**kwargs)
+        return rendered
+
+    def render(self, tpl_name, **kwargs) -> str:
+        template = self.env.get_template(tpl_name)
+        # ctx = {
+        #     "request": request.ctx.__dict__,
+        # }
+        rendered = template.render(**kwargs)
+        return rendered
+
     def get_template(self, tpl_name) -> Template:
         return self.env.get_template(tpl_name)
