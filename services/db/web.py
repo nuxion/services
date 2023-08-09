@@ -43,7 +43,7 @@ class DBHelper:
             async with db.async_session() as session:
                 yield session
         finally:
-            await self.dispose()
+            await self.dispose(name=name)
 
     @contextlib.asynccontextmanager
     async def conn(self, *, name="default") -> AsyncIterator[AsyncSession]:
@@ -55,7 +55,7 @@ class DBHelper:
             async with db.conn() as conn:
                 yield conn
         finally:
-            await self.dispose()
+            await self.dispose(name=name)
 
     @contextlib.asynccontextmanager
     async def begin(self, *, name="default") -> AsyncIterator[AsyncSession]:
@@ -67,7 +67,7 @@ class DBHelper:
             async with db.begin() as conn:
                 yield conn
         finally:
-            await self.dispose()
+            await self.dispose(name=name)
 
 
 def init_db(app: Sanic, settings: Settings):
