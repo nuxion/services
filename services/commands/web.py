@@ -67,6 +67,7 @@ def web_cli(
         host=host,
         port=int(port),
         dev=dev,
+        workers=w,
         auto_reload=auto_reload if not single else False,
         access_log=access_log,
         single_process=single,
