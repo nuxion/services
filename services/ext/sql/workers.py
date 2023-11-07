@@ -143,7 +143,7 @@ class SQLBackend(IState):
             stmt = select(self._tasks).where(self._tasks.c.id == taskid).limit(1)
             res = await conn.execute(stmt)
             row = res.fetchone()
-            task = Task(**dict(row))
+            task = Task(**dict(row._mapping))
         return task
 
     async def list_tasks(self) -> List[Task]:
@@ -151,7 +151,7 @@ class SQLBackend(IState):
             stmt = select(self._tasks)
             res = await conn.execute(stmt)
             rows = res.fetchall()
-            tasks = [Task(**dict(r)) for r in rows]
+            tasks = [Task(**dict(r._mapping)) for r in rows]
         return tasks
 
     async def update_status(self, taskid: str, status: str) -> bool:
@@ -214,7 +214,7 @@ class SQLBackend(IState):
             )
             res = await conn.execute(stmt)
             rows = res.fetchall()
-            tasks = [Task(**dict(r)) for r in rows]
+            tasks = [Task(**dict(r._mapping)) for r in rows]
         # futures = []
         tasks_ids = []
         async with self.begin() as conn:
@@ -235,7 +235,7 @@ class SQLBackend(IState):
             )
             res = await conn.execute(stmt)
             rows = res.fetchall()
-            tasks = [Task(**dict(r)) for r in rows]
+            tasks = [Task(**dict(r._mapping)) for r in rows]
 
         # futures = []
         async with self.begin() as conn:
@@ -253,7 +253,7 @@ class SQLBackend(IState):
             )
             res = await conn.execute(stmt)
             rows = res.fetchall()
-            tasks = [Task(**dict(r)) for r in rows]
+            tasks = [Task(**dict(r._mapping)) for r in rows]
 
         # futures = []
         async with self.begin() as conn:
