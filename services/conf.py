@@ -46,13 +46,15 @@ def load_conf(settings_module=None, default_module=GLOBAL_MODULE) -> Settings:
     """
     It loads the settings modules in the following order of priority:
 
-    1. settings_module function param
-    2. environment variable of defaults.SETTINGS_MODULE_VAR
-    3. DEFAULT_MODULE value.
+    1. Environment variable settings_module function param (deprecated by now)
+    1. environment variable from defaults.SETTINGS_MODULE_VAR
+    2. from function variable.
+    3. DEFAULT_MODULE value. (deprecated)
 
     """
-    if not settings_module:
-        settings_module = os.getenv(defaults.SETTINGS_MODULE_VAR, default_module)
+    _from_env = os.getenv(defaults.SETTINGS_MODULE_VAR)
+    if _from_env:
+        settings_module = _from_env
     module_loaded = settings_module
     base_path = define_base_path()
     sys.path.insert(0, base_path)
