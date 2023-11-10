@@ -90,11 +90,13 @@ class Render:
         dev_server = f"{conf.VITE_DEV_SERVER}"
         if conf.VITE_BASE != "/":
             dev_server = f"{conf.VITE_DEV_SERVER}{conf.VITE_BASE}"
-        self.add_extension(ViteDev)
-        self.add_extension(ViteAsset)
+
         self.env.vite_dev_server = dev_server
         self.env.vite_dev_mode = conf.VITE_DEV_MODE
         self.env.vite_react_mode = conf.VITE_REACT_MODE
+        self.env.vite_base = conf.VITE_BASE
+        self.add_extension(ViteDev)
+        self.add_extension(ViteAsset)
 
         if conf.VITE_DEV_MODE:
             static_dir = f"{settings.BASE_PATH}/{conf.VITE_STATIC_DIR}"
@@ -120,14 +122,15 @@ class Render:
 
     async def async_render(self, request, tpl_name, **kwargs) -> str:
         template = self.env.get_template(tpl_name)
-        # ctx = {
-        #     "request": request.ctx.__dict__,
-        # }
         app = self._get_app(request)
         conf = {}
+        ctx = {}
         if app.config.SETTINGS.DEBUG:
+            ctx = {
+                "request": request.ctx.__dict__,
+            }
             conf = app.config.SETTINGS
-        rendered = await template.render_async(conf=conf, **kwargs)
+        rendered = await template.render_async(conf=conf, ctx=ctx, **kwargs)
         return rendered
 
     async def arender(self, tpl_name, **kwargs) -> str:

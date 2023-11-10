@@ -6,12 +6,11 @@ from jinja2.utils import markupsafe
 
 from .simple_tags import StandaloneTag
 
-scripts_attrs = {"type": "module", "async": "", "defer": ""}
+scripts_attrs_async = {"type": "module", "async": "", "defer": ""}
+scripts_attrs_nomod = {"nomodule": ""}
 
 
-def generate_script_tag(
-    src: str, attrs: Optional[Dict[str, str]] = None
-) -> str:
+def generate_script_tag(src: str, attrs: Optional[Dict[str, str]] = None) -> str:
     """Generates an HTML script tag."""
     attrs_str: str = ""
     if attrs is not None:
@@ -58,8 +57,7 @@ class ViteDev(StandaloneTag):
 
     @staticmethod
     def generate_vite_server_url(vite_dev_srv: str, path: Optional[str] = None):
-        return urljoin(
-            vite_dev_srv, path if path is not None else "")
+        return urljoin(vite_dev_srv, path if path is not None else "")
 
     def render(self, script_name="main.js"):
         _url = f"{self.environment.vite_dev_server}/{script_name}"
@@ -82,18 +80,24 @@ class ViteAsset(StandaloneTag):
         environment.extend(vite_manifest_prefix="", vite_manifest=None)
         environment.extend(vite_dev_mod_prefix="", vite_dev_mode=None)
 
-    def render(self, asset_name="main.js"):
+    def render(self, asset_name="main.js", legacy=False):
         if not self.environment.vite_dev_mode:
             m = self.environment.vite_manifest[asset_name]
             tags = []
             asset = m["file"]
-            tag = generate_script_tag(asset, attrs=scripts_attrs)
+            bp = self.environment.vite_base
+            if bp:
+                asset = f"{bp}{asset}"
+            if legacy:
+                tag = generate_script_tag(asset, attrs=scripts_attrs_nomod)
+            else:
+                tag = generate_script_tag(asset, attrs=scripts_attrs_async)
             tags.append(tag)
             if m.get("css"):
                 for css in m.get("css"):
-                    tags.append(
-                        generate_stylesheet_tag(css)
-                    )
+                    if bp:
+                        css = f"{bp}{css}"
+                    tags.append(generate_stylesheet_tag(css))
 
             return markupsafe.Markup("\n".join(tags))
         return markupsafe.Markup()
