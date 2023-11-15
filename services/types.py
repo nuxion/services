@@ -196,6 +196,8 @@ class Settings(BaseSettings):
     BASE_PATH: Union[str, Path]
     HOST: str = "localhost"
     PORT: str = "8000"
+    BASE_URL: str = "http://localhost:8000"
+    BASE_DOMAIN: str = "localhost"
     DATABASES: Dict[str, Database] = {}
     REDIS: Optional[RedisDsn] = None
     REDIS_POOL_SIZE: int = 10

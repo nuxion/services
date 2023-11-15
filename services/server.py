@@ -54,6 +54,7 @@ def create_srv(
         "docExpansion": "none",
     }
     app.config.SETTINGS = settings
+    app.config.SERVER_NAME = settings.BASE_URL
     if settings.REDIS:
         app.ctx.redis = create_redis(settings.REDIS)
     if settings.DATABASES:
